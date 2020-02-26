@@ -1,14 +1,39 @@
 # put here your custom config value
-menu "Example Configuration"
-config ESP_WIFI_SSID
+menu "Light Clock Configuration"
+config LC_WIFI_SSID
     string "WiFi SSID"
     default "myssid"
     help
 	SSID (network name) for the example to connect to.
 
-config ESP_WIFI_PASSWORD
+config LC_WIFI_PASSWORD
     string "WiFi Password"
     default "mypassword"
     help
 	WiFi password (WPA or WPA2) for the example to use.
+
+config LC_LED_STRIP_1_DATA_PIN
+    int "LED Strip 1 Data Pin"
+    default 43
+    help
+	GPIO pin number connected to LED strip 1's Data pin
+
+config LC_LED_STRIP_1_CLOCK_PIN
+    int "LED Strip 1 Clock Pin"
+    default 44
+    help
+	GPIO pin number connected to LED strip 1's Clock pin
+
+config LC_LED_STRIP_2_DATA_PIN
+    int "LED Strip 2 Data Pin"
+    default 45
+    help
+	GPIO pin number connected to LED strip 2's Data pin
+
+config LC_LED_STRIP_2_CLOCK_PIN
+    int "LED Strip 2 Clock Pin"
+    default 46
+    help
+	GPIO pin number connected to LED strip 2's Clock pin
+
 endmenu
