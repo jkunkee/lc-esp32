@@ -8,6 +8,9 @@
 // netif init
 #include "esp_netif.h"
 
+// wifi driver
+#include "esp_wifi.h"
+
 void app_main(void)
 {
     // Per https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_wifi.html
@@ -25,6 +28,14 @@ void app_main(void)
     // This doesn't mean configured or active, just global initialization.
 
     ESP_ERROR_CHECK(esp_netif_init());
+
+    // The wifi driver also seems to rely on the default event loop being set up.
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // Initialize the default wifi driver. Does its own netif init.
+
+    esp_netif_create_default_wifi_sta();
 
     int i = 0;
     while (1) {
