@@ -100,6 +100,17 @@ void app_main(void)
 
     // Register the event handler
     s_wifi_event_group = xEventGroupCreate();
+    // The idea here is that the wifi driver operates asynchronously. Once esp_wifi_start is called,
+    // it starts pumping messages on the default event loop/message buss thing.
+    // This thread waits on the relevant events.
+    // The handler registered here returns control flow to this thread by means of the event group.
+    // I think this kind of handler should be lightweight and the work should be done on another thread,
+    // but that doesn't quite feel justified to me.
+    // It could be so the handler can be reentrant. It serializes the async events into an xEventGroup
+    // so a single non-reentrant function can run (in my case) a state machine.
+    // It could be because the event loop needs to be responsive so it shouldn't spend a lot of time.
+    // The use of esp_wifi_connect in the example handler suggests it's not the latter.
+    // I don't know enough to say if it's the former.
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
@@ -119,6 +130,8 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Wifi client station initialization finished.");
 
+    // Now that the wifi driver is operating, wait for the event handler to signal
+    // the xEventGroup so we know what happened.
     ESP_LOGI(TAG, "Waiting on IP acquisition...");
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
             WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
@@ -126,6 +139,7 @@ void app_main(void)
             pdFALSE,
             portMAX_DELAY);
 
+    // Log what the xEventGroup said.
     if (bits & WIFI_CONNECTED_BIT) {
         ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
                  CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
