@@ -17,6 +17,9 @@
 // FreeRTOS event groups
 #include "freertos/event_groups.h"
 
+// mDNS responder utilities
+#include "mdns.h"
+
 #define TAG "lc-esp32 main"
 
 // The FreeRTOS event group abstracts the details of wifi driver and netif operation.
@@ -153,6 +156,28 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
     vEventGroupDelete(s_wifi_event_group);
+
+    // make wild assumptions about wifi success and start the mDNS responder. :)
+    // TODO: build a real, well-designed state machine for everything.
+
+    //initialize mDNS
+    ESP_ERROR_CHECK( mdns_init() );
+    //set mDNS hostname (required if you want to advertise services)
+    ESP_ERROR_CHECK( mdns_hostname_set(CONFIG_LC_MDNS_HOSTNAME) );
+    ESP_LOGI(TAG, "mdns hostname set to: [%s]", CONFIG_LC_MDNS_HOSTNAME);
+    //set default mDNS instance name
+    ESP_ERROR_CHECK( mdns_instance_name_set(CONFIG_LC_MDNS_INSTANCE) );
+
+    //structure with TXT records
+    mdns_txt_item_t serviceTxtData[] = {
+        {"board","esp32"},
+        {"u","user"},
+        {"p","password"},
+        {"path", "/foobar"},
+    };
+
+    //initialize service
+    ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
 
     int i = 0;
     while (1) {

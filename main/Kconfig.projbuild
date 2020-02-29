@@ -1,5 +1,18 @@
 # put here your custom config value
 menu "Light Clock Configuration"
+
+config LC_MDNS_HOSTNAME
+    string "mDNS Hostname"
+    default "lightclock"
+    help
+    Hostname for use by the mDNS responder (will have .local appended)
+
+config LC_MDNS_INSTANCE
+    string "mDNS Instance Name"
+    default "Light Clock"
+    help
+    Human-readable mDNS Instance Name
+
 config LC_WIFI_SSID
     string "WiFi SSID"
     default "myssid"
