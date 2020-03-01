@@ -71,12 +71,52 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+// These are arranged in the linear sequence of normal operation.
+typedef enum _lc_state {
+
+    // Do initial configuration of subsystems
+    bootup,
+    // Self-test LED strips
+    //I think I'll do this with signals to the LED strip thread, not separate states.
+
+    // Start wifi driver, wait for IP address acquisition
+    acquire_wifi,
+    // With network info available, display it on the LED strips
+    //I think I'll do this with signals to the LED strip thread, not separate states.
+    // Start sNTP client and acquire current time
+    acquire_ntp,
+    // Start web server
+    start_net_services,
+    // Stead-state running
+    run,
+
+    // If the network fails, this is the shutdown sequence.
+    // Stop web server
+    stop_net_services,
+
+    // For some reason the main loop should terminate.
+    exit_main_loop,
+    // Something has gone horribly wrong; log it and reset.
+    // No state should have a higher index.
+    ERROR_STATE
+} lc_state;
+
 void app_main(void)
 {
+    // This function is run as a FreeRTOS Task.
+    // Govern what it does based on the current state plus inputs.
+
+    lc_state current_state = bootup;
+
+    // Several facilities rely on the default event loop being initialized.
+
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
     // Per https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/network/esp_wifi.html
     // the wifi driver relies on access to the non-volatile storage (NVS).
     // The wifi station example sets this up like so.
 
+    ESP_LOGI(TAG, "Initializing NVS (flash)...");
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_LOGI(TAG, "It appears flash erase/init is needed");
@@ -84,15 +124,19 @@ void app_main(void)
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
+    ESP_LOGI(TAG, "Initializing NVS complete.");
 
     // The wifi driver seems to rely on the NET-IF being initialized.
     // This doesn't mean configured or active, just global initialization.
 
+    ESP_LOGI(TAG, "Initializing NET IF...");
     ESP_ERROR_CHECK(esp_netif_init());
+    ESP_LOGI(TAG, "Initializing NET IF complete.");
 
-    // The wifi driver also seems to rely on the default event loop being set up.
+    ESP_LOGI(TAG, "Initializing WiFi...");
 
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // Create the event group used by the event handler
+    s_wifi_event_group = xEventGroupCreate();
 
     // Initialize the default wifi driver. Does its own netif setup. I think this is mostly plumbing.
 
@@ -103,22 +147,6 @@ void app_main(void)
     // It is not customized.
     // Apply the configuration.
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    // Register the event handler
-    s_wifi_event_group = xEventGroupCreate();
-    // The idea here is that the wifi driver operates asynchronously. Once esp_wifi_start is called,
-    // it starts pumping messages on the default event loop/message buss thing.
-    // This thread waits on the relevant events.
-    // The handler registered here returns control flow to this thread by means of the event group.
-    // I think this kind of handler should be lightweight and the work should be done on another thread,
-    // but that doesn't quite feel justified to me.
-    // It could be so the handler can be reentrant. It serializes the async events into an xEventGroup
-    // so a single non-reentrant function can run (in my case) a state machine.
-    // It could be because the event loop needs to be responsive so it shouldn't spend a lot of time.
-    // The use of esp_wifi_connect in the example handler suggests it's not the latter.
-    // I don't know enough to say if it's the former.
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     // Set the SSID and password
     wifi_config_t wifi_config = {
@@ -131,38 +159,11 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
     // Tell the wifi driver to use the provided SSID/password
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
-    // Tell the wifi driver to get cracking!
-    ESP_ERROR_CHECK(esp_wifi_start() );
 
-    ESP_LOGI(TAG, "Wifi client station initialization finished.");
+    ESP_LOGI(TAG, "Initializing WiFi complete.");
 
-    // Now that the wifi driver is operating, wait for the event handler to signal
-    // the xEventGroup so we know what happened.
-    ESP_LOGI(TAG, "Waiting on IP acquisition...");
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
-
-    // Log what the xEventGroup said.
-    if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
-                 CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
-    } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
-                 CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
-    } else {
-        ESP_LOGE(TAG, "UNEXPECTED EVENT");
-    }
-
-    ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
-    ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
-    vEventGroupDelete(s_wifi_event_group);
-
-    // make wild assumptions about wifi success and start the mDNS responder. :)
-    // TODO: build a real, well-designed state machine for everything.
-
+    // I believe the mDNS responder handles changes in the underlying media
+    // quite gracefully because the example doesn't have a start/stop structure.
     //initialize mDNS
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
@@ -182,10 +183,88 @@ void app_main(void)
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
 
-    int i = 0;
-    while (1) {
-        printf("[%d] Hello world!\n", i);
-        i++;
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+    uint32_t switch_count = 0;
+    while (current_state != exit_main_loop)
+    {
+        lc_state next_state = current_state;
+
+        ESP_LOGI(TAG, "Loop #%u of main loop", ++switch_count);
+
+        switch (current_state)
+        {
+        case bootup:
+            ESP_LOGI(TAG, "Bootup complete");
+            next_state = acquire_wifi;
+            break;
+        case acquire_wifi:
+            ESP_LOGI(TAG, "Starting to try to connect to wifi.");
+            // Register the event handler used to distil the wifi driver's events into simpler events.
+            //
+            // The idea here is that the wifi driver operates asynchronously. Once esp_wifi_start is called,
+            // it starts pumping messages on the default event loop/message buss thing.
+            // This thread waits on the relevant events.
+            // The handler registered here returns control flow to this thread by means of the event group.
+            // I think this kind of handler should be lightweight and the work should be done on another thread,
+            // but that doesn't quite feel justified to me.
+            // It could be so the handler can be reentrant. It serializes the async events into an xEventGroup
+            // so a single non-reentrant function can run (in my case) a state machine.
+            // It could be because the event loop needs to be responsive so it shouldn't spend a lot of time.
+            // The use of esp_wifi_connect in the example handler suggests it's not the latter.
+            // I don't know enough to say if it's the former.
+            ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
+            ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
+
+            // Tell the wifi driver to get cracking!
+            ESP_ERROR_CHECK(esp_wifi_start() );
+
+            // Now that the wifi driver is operating, wait for the event handler to signal
+            // the xEventGroup so we know what happened.
+            ESP_LOGI(TAG, "Waiting on IP acquisition...");
+            EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
+                    WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
+                    pdFALSE,
+                    pdFALSE,
+                    portMAX_DELAY);
+
+            // Now that something has happened, stop processing more events
+            ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
+            ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
+            // Reset the bits in the event group so it can be reused
+            xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
+
+            // Log what the xEventGroup said.
+            if (bits & WIFI_CONNECTED_BIT) {
+                ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
+                        CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
+                next_state = start_net_services;
+            } else if (bits & WIFI_FAIL_BIT) {
+                ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
+                        CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
+                // retry indefinitely
+                next_state = acquire_wifi;
+                // Wait 30s between sets of retries
+                vTaskDelay(30000 / portTICK_PERIOD_MS);
+            } else {
+                ESP_LOGE(TAG, "UNEXPECTED EVENT");
+                next_state = ERROR_STATE;
+            }
+
+            break;
+        case start_net_services:
+            ESP_LOGI(TAG, "Wifi connected; starting net services (stub).");
+            next_state = ERROR_STATE;
+            break;
+        case stop_net_services:
+            break;
+        case exit_main_loop:
+            break;
+        case ERROR_STATE:
+            //fallthrough
+        default:
+            ESP_LOGI(TAG, "Landed in ERROR_STATE or default case in state machine");
+            next_state = ERROR_STATE;
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
+        }
+        current_state = next_state;
     }
 }
