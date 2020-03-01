@@ -1,3 +1,5 @@
+
+// Template entries
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -17,9 +19,10 @@
 // FreeRTOS event groups
 #include "freertos/event_groups.h"
 
-// mDNS responder utilities
+// mDNS responder API
 #include "mdns.h"
 
+// Tag used to prefix log entries from this file
 #define TAG "lc-esp32 main"
 
 // The FreeRTOS event group abstracts the details of wifi driver and netif operation.
