@@ -75,6 +75,14 @@ static void event_handler(void* arg, esp_event_base_t event_base,
     }
 }
 
+// There are really just four states:
+// 1. initialization
+// 2. waiting for network connectivity
+// 3. network connectivity available
+// 4. something went horribly wrong
+// This can be reimagined into an event-based set of connections.
+// Wifi sends 'network on' and 'network off' events
+// SNTP has 'time set' events
 // These are arranged in the linear sequence of normal operation.
 typedef enum _lc_state {
 
