@@ -22,6 +22,10 @@
 // mDNS responder API
 #include "mdns.h"
 
+// http server definitions for http.c (could be http.h)
+esp_err_t lc_http_start(void);
+void lc_http_stop(void);
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 main"
 
@@ -251,10 +255,27 @@ void app_main(void)
 
             break;
         case start_net_services:
-            ESP_LOGI(TAG, "Wifi connected; starting net services (stub).");
+            ESP_LOGI(TAG, "Wifi connected; starting net services.");
+
+            if (lc_http_start() == ESP_OK)
+            {
+                next_state = run;
+            }
+            else
+            {
+                ESP_LOGI(TAG, "Error starting server!");
+                next_state = ERROR_STATE;
+            }
+
+            break;
+        case run:
+            // TODO: wait on network change
+            vTaskDelay(5000 / portTICK_PERIOD_MS);
             next_state = ERROR_STATE;
             break;
         case stop_net_services:
+            lc_http_stop();
+            next_state = acquire_wifi;
             break;
         case exit_main_loop:
             break;
