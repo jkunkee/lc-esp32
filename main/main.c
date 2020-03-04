@@ -51,28 +51,50 @@ static int s_retry_num = 0;
 
 #define LC_ESP_MAXIMUM_RETRY 5
 
-static void event_handler(void* arg, esp_event_base_t event_base,
-                                int32_t event_id, void* event_data)
+//
+// Default Event Loop event handlers
+//
+
+static void on_wifi_init_complete(void* arg, esp_event_base_t event_base,
+                                  int32_t event_id, void* event_data)
 {
-    // The driver is started; try connecting
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        // When we get disconnected, try to reconnect.
-        if (s_retry_num < LC_ESP_MAXIMUM_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "retry to connect to the AP");
-        } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-        }
-        ESP_LOGI(TAG,"connect to the AP fail");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-        s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+    // This fires after esp_wifi_start completes. Make the first esp_wifi_connect call.
+    ESP_LOGI(TAG, "WiFi driver has finish started, initiating first connect");
+    esp_wifi_connect();
+}
+
+static void on_ip_acquired(void* arg, esp_event_base_t event_base,
+                           int32_t event_id, void* event_data)
+{
+    // This fires if esp_wifi_connect succeeds
+    ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
+    ESP_LOGI(TAG, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
+
+    // Start network-dependent services that don't register their own handlers
+    ESP_ERROR_CHECK(lc_http_start());
+
+    // Tell the app_main state machine it can proceed (unnecessary?)
+    s_retry_num = 0;
+    xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
+}
+
+static void on_wifi_disconnected(void* arg, esp_event_base_t event_base,
+                                 int32_t event_id, void* event_data)
+{
+    // This fires if esp_wifi_connect fails or if the connection drops.
+    s_retry_num += 1;
+    ESP_LOGI(TAG, "WiFi disconnect event fired, attempt %d", s_retry_num);
+
+    // Stop network-dependent services that don't register their own handlers
+    lc_http_stop();
+
+    // Attempt to reconnect.
+    // event loop should scream about this delay unless it's properly async.
+    if (s_retry_num > 5)
+    {
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
+    esp_wifi_connect();
 }
 
 // There are really just four states:
@@ -172,6 +194,12 @@ void app_main(void)
     // Tell the wifi driver to use the provided SSID/password
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
 
+    // Event handlers
+    // This is where the bulk of the work happens.
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_STA_START, on_wifi_init_complete, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, on_ip_acquired, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, on_wifi_disconnected, NULL, NULL));
+
     ESP_LOGI(TAG, "Initializing WiFi complete.");
 
     // I believe the mDNS responder handles changes in the underlying media
@@ -210,39 +238,19 @@ void app_main(void)
             break;
         case acquire_wifi:
             ESP_LOGI(TAG, "Starting to try to connect to wifi.");
-            // Register the event handler used to distil the wifi driver's events into simpler events.
-            //
-            // The idea here is that the wifi driver operates asynchronously. Once esp_wifi_start is called,
-            // it starts pumping messages on the default event loop/message buss thing.
-            // This thread waits on the relevant events.
-            // The handler registered here returns control flow to this thread by means of the event group.
-            // I think this kind of handler should be lightweight and the work should be done on another thread,
-            // but that doesn't quite feel justified to me.
-            // It could be so the handler can be reentrant. It serializes the async events into an xEventGroup
-            // so a single non-reentrant function can run (in my case) a state machine.
-            // It could be because the event loop needs to be responsive so it shouldn't spend a lot of time.
-            // The use of esp_wifi_connect in the example handler suggests it's not the latter.
-            // I don't know enough to say if it's the former.
-            ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
-            ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
             // Tell the wifi driver to get cracking!
-            ESP_ERROR_CHECK(esp_wifi_start() );
+            // This primes the event loop with its first event.
+            ESP_ERROR_CHECK( esp_wifi_start() );
 
             // Now that the wifi driver is operating, wait for the event handler to signal
             // the xEventGroup so we know what happened.
             ESP_LOGI(TAG, "Waiting on IP acquisition...");
             EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-                    WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-                    pdFALSE,
+                    WIFI_CONNECTED_BIT,
+                    pdTRUE,
                     pdFALSE,
                     portMAX_DELAY);
-
-            // Now that something has happened, stop processing more events
-            ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler));
-            ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler));
-            // Reset the bits in the event group so it can be reused
-            xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
 
             // Log what the xEventGroup said.
             if (bits & WIFI_CONNECTED_BIT) {
@@ -265,24 +273,15 @@ void app_main(void)
         case start_net_services:
             ESP_LOGI(TAG, "Wifi connected; starting net services.");
 
-            if (lc_http_start() == ESP_OK)
-            {
-                next_state = run;
-            }
-            else
-            {
-                ESP_LOGI(TAG, "Error starting server!");
-                next_state = ERROR_STATE;
-            }
+            next_state = run;
 
             break;
         case run:
-            // TODO: wait on network change
-            vTaskDelay(5000 / portTICK_PERIOD_MS);
+            xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
+            ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;
             break;
         case stop_net_services:
-            lc_http_stop();
             next_state = acquire_wifi;
             break;
         case exit_main_loop:

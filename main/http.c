@@ -33,6 +33,9 @@ esp_err_t lc_http_start(void)
 
 void lc_http_stop(void)
 {
-    // I think this can and should be embedded completely in event handlers
-    httpd_stop(server);
+    if (server != NULL)
+    {
+        httpd_stop(server);
+        server = NULL;
+    }
 }
