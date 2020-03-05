@@ -22,6 +22,9 @@
 // mDNS responder API
 #include "mdns.h"
 
+// SNTP API
+#include "esp_sntp.h"
+
 // http server definitions for http.c (could be http.h)
 esp_err_t lc_http_start(void);
 void lc_http_stop(void);
@@ -72,6 +75,11 @@ static void on_ip_acquired(void* arg, esp_event_base_t event_base,
 
     // Start network-dependent services that don't register their own handlers
     ESP_ERROR_CHECK(lc_http_start());
+    bool sntp_restart_succeeded = sntp_restart();
+    if (sntp_restart_succeeded != pdFALSE)
+    {
+        ESP_LOGE(TAG, "SNTP restart failed");
+    }
 
     // Tell the app_main state machine it can proceed (unnecessary?)
     s_retry_num = 0;
@@ -87,6 +95,7 @@ static void on_wifi_disconnected(void* arg, esp_event_base_t event_base,
 
     // Stop network-dependent services that don't register their own handlers
     lc_http_stop();
+    sntp_stop();
 
     // Attempt to reconnect.
     // event loop should scream about this delay unless it's properly async.
@@ -222,6 +231,15 @@ void app_main(void)
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
+
+    // Set up the Simple NTP (SNTP) client
+    // The sample and the docs don't describe how to handle network availability transitions.
+    // https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/system_time.html
+    ESP_LOGI(TAG, "Initializing SNTP");
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, "pool.ntp.org");
+    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+    sntp_init();
 
     uint32_t switch_count = 0;
     while (current_state != exit_main_loop)
