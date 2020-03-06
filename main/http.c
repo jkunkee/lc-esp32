@@ -15,9 +15,16 @@ esp_err_t lc_http_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
-    // Start the httpd server
+    if (server != NULL)
+    {
+        ESP_LOGE(TAG, "httpd already started");
+        return ESP_ERR_INVALID_STATE;
+    }
+
     ESP_LOGI(TAG, "Starting server on port: '%d'", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
+    esp_err_t start_result = httpd_start(&server, &config);
+    // Start the httpd server
+    if (start_result == ESP_OK) {
         // Set URI handlers
         ESP_LOGI(TAG, "Registering URI handlers");
         //httpd_register_uri_handler(server, &hello);
@@ -25,10 +32,13 @@ esp_err_t lc_http_start(void)
         //httpd_register_uri_handler(server, &ctrl);
         return ESP_OK;
     }
+    else
+    {
+        ESP_LOGI(TAG, "Error starting server! %d", start_result);
+        server = NULL;
+    }
 
-    server = NULL;
-    ESP_LOGI(TAG, "Error starting server!");
-    return ESP_ERR_INVALID_STATE;
+    return start_result;
 }
 
 void lc_http_stop(void)
@@ -37,5 +47,9 @@ void lc_http_stop(void)
     {
         httpd_stop(server);
         server = NULL;
+    }
+    else
+    {
+        ESP_LOGE(TAG, "httpd already stopped");
     }
 }
