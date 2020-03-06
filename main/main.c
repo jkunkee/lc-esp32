@@ -75,10 +75,10 @@ static void on_ip_acquired(void* arg, esp_event_base_t event_base,
 
     // Start network-dependent services that don't register their own handlers
     ESP_ERROR_CHECK(lc_http_start());
-    bool sntp_restart_succeeded = sntp_restart();
-    if (sntp_restart_succeeded != pdFALSE)
+    // modelled after sntp_restart
+    if (!sntp_enabled())
     {
-        ESP_LOGE(TAG, "SNTP restart failed");
+        sntp_init();
     }
 
     // Tell the app_main state machine it can proceed (unnecessary?)
@@ -95,7 +95,10 @@ static void on_wifi_disconnected(void* arg, esp_event_base_t event_base,
 
     // Stop network-dependent services that don't register their own handlers
     lc_http_stop();
-    sntp_stop();
+    if (sntp_enabled())
+    {
+        sntp_stop();
+    }
 
     // Attempt to reconnect.
     // event loop should scream about this delay unless it's properly async.
@@ -104,6 +107,56 @@ static void on_wifi_disconnected(void* arg, esp_event_base_t event_base,
         vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
     esp_wifi_connect();
+}
+
+void on_time_sync_notification(struct timeval *tv)
+{
+    ESP_LOGI(TAG, "Notification of a time synchronization event");
+
+    // read the current time
+    time_t now;
+    time(&now);
+    ESP_LOGI(TAG, "Raw now: %ld", now);
+
+    // Convert it to a local time based on TZ
+    struct tm local_now;
+    localtime_r(&now, &local_now);
+
+    // Convert that to a printable string
+    char time_string[64];
+    strftime(time_string, LWIP_ARRAYSIZE(time_string), "%c", &local_now);
+
+    // Log the time
+    ESP_LOGI(TAG, "BOING! BOING! The current time is: %s", time_string);
+}
+
+#define TIME_CHECK_TASK_TAG "time_check_task"
+
+void time_check_task(void* task_param)
+{
+    while (pdTRUE)
+    {
+        vTaskDelay(10*1000 / portTICK_PERIOD_MS);
+
+        ESP_LOGI(TIME_CHECK_TASK_TAG, "time_check_task checking time");
+
+        // read the current time
+        time_t now;
+        time(&now);
+        ESP_LOGI(TIME_CHECK_TASK_TAG, "Raw now: %ld", now);
+
+        // Convert it to a local time based on TZ
+        struct tm local_now;
+        localtime_r(&now, &local_now);
+
+        // Convert that to a printable string
+        char time_string[65];
+        strftime(time_string, LWIP_ARRAYSIZE(time_string)-1, "%c", &local_now);
+        time_string[LWIP_ARRAYSIZE(time_string)-1] = '\0';
+
+        // Log the time
+        ESP_LOGI(TIME_CHECK_TASK_TAG, "At the tone, the current time is: %s", time_string);
+    }
 }
 
 // There are really just four states:
@@ -238,8 +291,18 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing SNTP");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
-    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
-    sntp_init();
+    sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
+    sntp_set_time_sync_notification_cb(on_time_sync_notification);
+
+    // http://www.webexhibits.org/daylightsaving/b2.html
+    // Most of the United States begins Daylight Saving Time at 2:00 a.m. on the second Sunday in March
+    // and reverts to standard time on the first Sunday in November. In the U.S., each time zone
+    // switches at a different time.
+    // http://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
+    setenv("TZ", "PST+8PDT,M3.2.0/2,M11.1.0/2", 1);
+    tzset();
+
+    xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
 
     uint32_t switch_count = 0;
     while (current_state != exit_main_loop)
