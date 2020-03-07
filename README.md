@@ -1,11 +1,20 @@
-ESP-IDF template app
-====================
+ESP32 Light Clock
+=================
 
-This is a template application to be used with [Espressif IoT Development Framework](https://github.com/espressif/esp-idf).
+This project aims to be a light-based alarm clock controlled over WiFi.
 
-Please check [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for getting started instructions.
+Features
+========
 
-*Code in this repository is in the Public Domain (or CC0 licensed, at your option.)
-Unless required by applicable law or agreed to in writing, this
-software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied.*
+It advertises itself via mDNS.
+It sets itself via NTP.
+It is controlled via a web page served over HTTP.
+It controls two 60-element APA104 LED strips using the RMT peripheral.
+
+Known Issues/TODO/Won't-Fix
+===========================
+
+It is pretty naive in its network error handling, so it may not correctly handle DHCP renewal with an IP change.
+It does not use HTTPS nor does it implement user authentication/authorization, so it is not secure.
+
+I'm new to the ESP, so of course there could be more. :)
