@@ -33,7 +33,7 @@ void lc_http_stop(void);
 #define TAG "lc-esp32 main"
 
 // The FreeRTOS event group abstracts the details of wifi driver and netif operation.
-// The event handler analyzes the wifi and netif events and signals the event.
+// The event handlers analyze the wifi and netif events and signal the event.
 
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t s_wifi_event_group;
@@ -44,15 +44,9 @@ static EventGroupHandle_t s_wifi_event_group;
 #define WIFI_CONNECTED_BIT BIT0
 #define WIFI_FAIL_BIT      BIT1
 
-// Event handler on the default event loop.
-// Eventually to be used to respond to wifi and network events and start/stop the HTTP server based on them.
-// currently it's just the wifi example tho
+// keep track of wifi reconnect retries
 
 static int s_retry_num = 0;
-
-// How many times should the wifi try to reconnect before giving up and emitting a WIFI_FAIL event?
-
-#define LC_ESP_MAXIMUM_RETRY 5
 
 //
 // Default Event Loop event handlers
@@ -159,39 +153,16 @@ void time_check_task(void* task_param)
     }
 }
 
-// There are really just four states:
-// 1. initialization
-// 2. waiting for network connectivity
-// 3. network connectivity available
-// 4. something went horribly wrong
-// This can be reimagined into an event-based set of connections.
-// Wifi sends 'network on' and 'network off' events
-// SNTP has 'time set' events
-// These are arranged in the linear sequence of normal operation.
 typedef enum _lc_state {
 
     // Do initial configuration of subsystems
     bootup,
-    // Self-test LED strips
-    //I think I'll do this with signals to the LED strip thread, not separate states.
 
     // Start wifi driver, wait for IP address acquisition
     acquire_wifi,
-    // With network info available, display it on the LED strips
-    //I think I'll do this with signals to the LED strip thread, not separate states.
-    // Start sNTP client and acquire current time
-    acquire_ntp,
-    // Start web server
-    start_net_services,
     // Stead-state running
     run,
 
-    // If the network fails, this is the shutdown sequence.
-    // Stop web server
-    stop_net_services,
-
-    // For some reason the main loop should terminate.
-    exit_main_loop,
     // Something has gone horribly wrong; log it and reset.
     // No state should have a higher index.
     ERROR_STATE
@@ -305,7 +276,7 @@ void app_main(void)
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
 
     uint32_t switch_count = 0;
-    while (current_state != exit_main_loop)
+    while (pdTRUE)
     {
         lc_state next_state = current_state;
 
@@ -337,7 +308,7 @@ void app_main(void)
             if (bits & WIFI_CONNECTED_BIT) {
                 ESP_LOGI(TAG, "connected to ap SSID:%s password:%s",
                         CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
-                next_state = start_net_services;
+                next_state = run;
             } else if (bits & WIFI_FAIL_BIT) {
                 ESP_LOGI(TAG, "Failed to connect to SSID:%s, password:%s",
                         CONFIG_LC_WIFI_SSID, CONFIG_LC_WIFI_PASSWORD);
@@ -351,21 +322,10 @@ void app_main(void)
             }
 
             break;
-        case start_net_services:
-            ESP_LOGI(TAG, "Wifi connected; starting net services.");
-
-            next_state = run;
-
-            break;
         case run:
             xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
             ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;
-            break;
-        case stop_net_services:
-            next_state = acquire_wifi;
-            break;
-        case exit_main_loop:
             break;
         case ERROR_STATE:
             //fallthrough
