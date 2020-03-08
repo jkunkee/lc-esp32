@@ -330,6 +330,7 @@ void app_main(void)
 
             break;
         case run:
+            ESP_ERROR_CHECK(led_run_sync(fill_white));
             xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
             ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;
