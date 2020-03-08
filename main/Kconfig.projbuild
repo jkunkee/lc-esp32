@@ -27,26 +27,14 @@ config LC_WIFI_PASSWORD
 
 config LC_LED_STRIP_1_DATA_PIN
     int "LED Strip 1 Data Pin"
-    default 43
+    default 18
     help
 	GPIO pin number connected to LED strip 1's Data pin
 
-config LC_LED_STRIP_1_CLOCK_PIN
-    int "LED Strip 1 Clock Pin"
-    default 44
-    help
-	GPIO pin number connected to LED strip 1's Clock pin
-
 config LC_LED_STRIP_2_DATA_PIN
     int "LED Strip 2 Data Pin"
-    default 45
+    default 19
     help
 	GPIO pin number connected to LED strip 2's Data pin
-
-config LC_LED_STRIP_2_CLOCK_PIN
-    int "LED Strip 2 Clock Pin"
-    default 46
-    help
-	GPIO pin number connected to LED strip 2's Clock pin
 
 endmenu

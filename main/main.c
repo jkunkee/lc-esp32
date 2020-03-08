@@ -29,6 +29,9 @@
 esp_err_t lc_http_start(void);
 void lc_http_stop(void);
 
+// LED strip interop
+#include "led.h"
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 main"
 
@@ -174,6 +177,8 @@ void app_main(void)
     // Govern what it does based on the current state plus inputs.
 
     lc_state current_state = bootup;
+
+    ESP_ERROR_CHECK(led_init());
 
     // Several facilities rely on the default event loop being initialized.
 
