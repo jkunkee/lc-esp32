@@ -14,11 +14,12 @@
 EventGroupHandle_t s_led_event_group;
 
 led_strip_t* strips[LED_STRIP_COUNT];
-int gpios[LED_STRIP_COUNT] = {CONFIG_LC_LED_STRIP_1_DATA_PIN, CONFIG_LC_LED_STRIP_2_DATA_PIN};
-int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_1};
 
 esp_err_t led_init(void)
 {
+    int gpios[LED_STRIP_COUNT] = {CONFIG_LC_LED_STRIP_1_DATA_PIN, CONFIG_LC_LED_STRIP_2_DATA_PIN};
+    int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_1};
+
     // Use an event group for animation completion notification
     s_led_event_group = xEventGroupCreate();
 
@@ -37,7 +38,7 @@ esp_err_t led_init(void)
         led_strip_config_t strip_config = LED_STRIP_DEFAULT_CONFIG(LEDS_PER_STRIP, (led_strip_dev_t)config.channel);
         led_strip_t *strip = led_strip_new_rmt_ws2812(&strip_config);
         if (!strip) {
-            ESP_LOGE(TAG, "install WS2812 driver %d failed", stripIdx);
+            ESP_LOGE(TAG, "install WS2812 driver #%d failed", stripIdx+1);
             retVal = ESP_FAIL;
             continue;
         }

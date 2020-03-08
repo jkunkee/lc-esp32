@@ -178,7 +178,9 @@ void app_main(void)
 
     lc_state current_state = bootup;
 
+    ESP_LOGI(TAG, "Initializing the LED driver...");
     ESP_ERROR_CHECK(led_init());
+    ESP_LOGI(TAG, "Initializing the LED driver complete.");
 
     // Several facilities rely on the default event loop being initialized.
 
@@ -243,6 +245,7 @@ void app_main(void)
     // I believe the mDNS responder handles changes in the underlying media
     // quite gracefully because the example doesn't have a start/stop structure.
     //initialize mDNS
+    ESP_LOGI(TAG, "Initializing mDNS responder...");
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK( mdns_hostname_set(CONFIG_LC_MDNS_HOSTNAME) );
@@ -253,18 +256,16 @@ void app_main(void)
     //structure with TXT records
     mdns_txt_item_t serviceTxtData[] = {
         {"board","esp32"},
-        {"u","user"},
-        {"p","password"},
-        {"path", "/foobar"},
     };
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
+    ESP_LOGI(TAG, "Initializing mDNS respond complete.");
 
     // Set up the Simple NTP (SNTP) client
     // The sample and the docs don't describe how to handle network availability transitions.
     // https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/system_time.html
-    ESP_LOGI(TAG, "Initializing SNTP");
+    ESP_LOGI(TAG, "Initializing SNTP...");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
     sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
@@ -279,6 +280,7 @@ void app_main(void)
     tzset();
 
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
+    ESP_LOGI(TAG, "Initializing SNTP complete.");
 
     uint32_t switch_count = 0;
     while (pdTRUE)

@@ -30,7 +30,6 @@ esp_err_t lc_http_start(void)
         //httpd_register_uri_handler(server, &hello);
         //httpd_register_uri_handler(server, &echo);
         //httpd_register_uri_handler(server, &ctrl);
-        return ESP_OK;
     }
     else
     {
