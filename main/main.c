@@ -80,6 +80,7 @@ static void on_ip_acquired(void* arg, esp_event_base_t event_base,
 
     // Tell the app_main state machine it can proceed (unnecessary?)
     s_retry_num = 0;
+    led_set_status_indicator(led_status_wifi, LED_STATUS_COLOR_SUCCESS);
     xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
 }
 
@@ -89,6 +90,8 @@ static void on_wifi_disconnected(void* arg, esp_event_base_t event_base,
     // This fires if esp_wifi_connect fails or if the connection drops.
     s_retry_num += 1;
     ESP_LOGI(TAG, "WiFi disconnect event fired, attempt %d", s_retry_num);
+    led_set_status_indicator(led_status_wifi, LED_STATUS_COLOR_AQUIRING);
+    led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_AQUIRING);
 
     // Stop network-dependent services that don't register their own handlers
     lc_http_stop();
@@ -125,6 +128,7 @@ void on_time_sync_notification(struct timeval *tv)
 
     // Log the time
     ESP_LOGI(TAG, "BOING! BOING! The current time is: %s", time_string);
+    led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_SUCCESS);
 }
 
 #define TIME_CHECK_TASK_TAG "time_check_task"
@@ -153,6 +157,7 @@ void time_check_task(void* task_param)
 
         // Log the time
         ESP_LOGI(TIME_CHECK_TASK_TAG, "At the tone, the current time is: %s", time_string);
+        led_run_sync(local_time_in_unix_epoch_seconds);
     }
 }
 
@@ -181,6 +186,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Initializing the LED driver...");
     ESP_ERROR_CHECK(led_init());
     ESP_LOGI(TAG, "Initializing the LED driver complete.");
+    led_set_status_indicator(led_status_led, LED_STATUS_COLOR_SUCCESS);
 
     // Several facilities rely on the default event loop being initialized.
 
@@ -191,6 +197,7 @@ void app_main(void)
     // The wifi station example sets this up like so.
 
     ESP_LOGI(TAG, "Initializing NVS (flash)...");
+    led_set_status_indicator(led_status_nvs, LED_STATUS_COLOR_BUSY);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_LOGI(TAG, "It appears flash erase/init is needed");
@@ -199,15 +206,19 @@ void app_main(void)
     }
     ESP_ERROR_CHECK(ret);
     ESP_LOGI(TAG, "Initializing NVS complete.");
+    led_set_status_indicator(led_status_nvs, LED_STATUS_COLOR_SUCCESS);
 
     // The wifi driver seems to rely on the NET-IF being initialized.
     // This doesn't mean configured or active, just global initialization.
 
     ESP_LOGI(TAG, "Initializing NET IF...");
+    led_set_status_indicator(led_status_netif, LED_STATUS_COLOR_BUSY);
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_LOGI(TAG, "Initializing NET IF complete.");
+    led_set_status_indicator(led_status_netif, LED_STATUS_COLOR_SUCCESS);
 
     ESP_LOGI(TAG, "Initializing WiFi...");
+    led_set_status_indicator(led_status_wifi, LED_STATUS_COLOR_BUSY);
 
     // Create the event group used by the event handler
     s_wifi_event_group = xEventGroupCreate();
@@ -246,6 +257,7 @@ void app_main(void)
     // quite gracefully because the example doesn't have a start/stop structure.
     //initialize mDNS
     ESP_LOGI(TAG, "Initializing mDNS responder...");
+    led_set_status_indicator(led_status_mdns, LED_STATUS_COLOR_BUSY);
     ESP_ERROR_CHECK( mdns_init() );
     //set mDNS hostname (required if you want to advertise services)
     ESP_ERROR_CHECK( mdns_hostname_set(CONFIG_LC_MDNS_HOSTNAME) );
@@ -261,11 +273,13 @@ void app_main(void)
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
     ESP_LOGI(TAG, "Initializing mDNS respond complete.");
+    led_set_status_indicator(led_status_mdns, LED_STATUS_COLOR_SUCCESS);
 
     // Set up the Simple NTP (SNTP) client
     // The sample and the docs don't describe how to handle network availability transitions.
     // https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/system_time.html
     ESP_LOGI(TAG, "Initializing SNTP...");
+    led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_BUSY);
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
     sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
@@ -278,6 +292,7 @@ void app_main(void)
     // http://www.gnu.org/software/libc/manual/html_node/TZ-Variable.html
     setenv("TZ", "PST+8PDT,M3.2.0/2,M11.1.0/2", 1);
     tzset();
+    led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_AQUIRING);
 
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
     ESP_LOGI(TAG, "Initializing SNTP complete.");
@@ -301,6 +316,7 @@ void app_main(void)
             // Tell the wifi driver to get cracking!
             // This primes the event loop with its first event.
             ESP_ERROR_CHECK( esp_wifi_start() );
+            led_set_status_indicator(led_status_wifi, LED_STATUS_COLOR_AQUIRING);
 
             // Now that the wifi driver is operating, wait for the event handler to signal
             // the xEventGroup so we know what happened.
@@ -331,6 +347,7 @@ void app_main(void)
             break;
         case run:
             ESP_ERROR_CHECK(led_run_sync(fill_white));
+            led_run_sync(status_indicators);
             xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
             ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;

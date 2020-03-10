@@ -14,7 +14,36 @@ typedef enum _led_pattern
 {
     sudden_white,
     fill_white,
+    brightness_gradient,
+    status_indicators,
+    local_time_in_unix_epoch_seconds,
 } led_pattern_t;
+
+typedef enum _led_status_index
+{
+    led_status_led,
+    led_status_nvs,
+    led_status_netif,
+    led_status_wifi,
+    led_status_mdns,
+    led_status_sntp,
+    led_status_MAX
+} led_status_index;
+
+typedef struct _led_color_t {
+    char r;
+    char g;
+    char b;
+} led_color_t;
+
+#define LED_STATUS_COLOR_OFF ((led_color_t){.r = 0, .g = 0, .b = 0})
+#define LED_STATUS_COLOR_ON ((led_color_t){.r = 100, .g = 100, .b = 100})
+#define LED_STATUS_COLOR_BUSY ((led_color_t){.r = 100, .g = 100, .b = 0})
+#define LED_STATUS_COLOR_AQUIRING ((led_color_t){.r = 0, .g = 0, .b = 100})
+#define LED_STATUS_COLOR_ERROR ((led_color_t){.r = 100, .g = 0, .b = 0})
+#define LED_STATUS_COLOR_SUCCESS ((led_color_t){.r = 0, .g = 100, .b = 0})
+
+void led_set_status_indicator(led_status_index idx, led_color_t color);
 
 #define LED_ERR_BASE 0x10000
 typedef enum _led_err_t
