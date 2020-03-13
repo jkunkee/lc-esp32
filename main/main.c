@@ -124,7 +124,9 @@ void on_time_sync_notification(struct timeval *tv)
 
     // Convert that to a printable string
     char time_string[64];
-    strftime(time_string, LWIP_ARRAYSIZE(time_string), "%c", &local_now);
+    strftime(time_string, LWIP_ARRAYSIZE(time_string) - 1, "%c", &local_now);
+    // Guarantee null termination since ESP_LOGI doesn't understand string length maximums
+    time_string[LWIP_ARRAYSIZE(time_string) - 1] = '\0';
 
     // Log the time
     ESP_LOGI(TAG, "BOING! BOING! The current time is: %s", time_string);
