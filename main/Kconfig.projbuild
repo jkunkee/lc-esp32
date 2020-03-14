@@ -37,4 +37,10 @@ config LC_LED_STRIP_2_DATA_PIN
     help
 	GPIO pin number connected to LED strip 2's Data pin
 
+config LC_HTTP_SETTINGS_BUFFER_SIZE
+    int "Maximum length of settings JSON contents"
+    default 1024
+    help
+    Specifies the length of the buffers used to both stringify/send and receive settings JSON
+
 endmenu
