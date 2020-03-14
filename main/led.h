@@ -1,4 +1,6 @@
 
+#pragma once
+
 // required by many headers
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
