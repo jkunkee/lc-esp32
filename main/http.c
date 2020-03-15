@@ -8,12 +8,18 @@
 // Config storage
 #include "settings_storage.h"
 
+// strlen
+#include <string.h>
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 http"
 
 static const char* main_page_content =
 "<html><head><title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title></head>"
 "<body>"
+"<script> \
+</script>"
+"<h1>"CONFIG_LC_MDNS_INSTANCE" Control Panel</h1>"
 "<p>Hello world</p>"
 "</body></html>";
 
@@ -32,12 +38,13 @@ static const httpd_uri_t main_page = {
 
 static esp_err_t settings_get_handler(httpd_req_t *req)
 {
-    ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_resp_set_type(req, "application/json") );
     char* buf;
     size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
     buf = malloc(buf_len);
-    ESP_ERROR_CHECK_WITHOUT_ABORT( settings_to_json(&current_settings, buf, buf_len) );
-    esp_err_t send_err = httpd_resp_send(req, buf, buf_len);
+    buf[buf_len-1] = '\0';
+    ESP_ERROR_CHECK_WITHOUT_ABORT( settings_to_json(&current_settings, buf, buf_len-1) );
+    ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_resp_set_type(req, "application/json") );
+    esp_err_t send_err = httpd_resp_send(req, buf, strlen(buf));
     free(buf);
     return send_err;
 }

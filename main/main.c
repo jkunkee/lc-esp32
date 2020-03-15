@@ -28,6 +28,9 @@
 // Settings storage
 #include "settings_storage.h"
 
+// strlen
+#include <string.h>
+
 // http server definitions for http.c (could be http.h)
 esp_err_t lc_http_start(void);
 void lc_http_stop(void);
@@ -302,7 +305,8 @@ void app_main(void)
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
     ESP_LOGI(TAG, "Initializing SNTP complete.");
 
-    ESP_ERROR_CHECK( json_to_settings("{\"alarm_hour\":8}", 17, &current_settings) );
+    char* test_json = "{\"alarm_hour\":8}";
+    ESP_ERROR_CHECK( json_to_settings(test_json, strlen(test_json)+1, &current_settings) );
     current_settings.alarm_minute = 4;
     char buf[64];
     ESP_ERROR_CHECK( settings_to_json(&current_settings, buf, 64) );

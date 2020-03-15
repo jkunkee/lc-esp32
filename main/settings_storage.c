@@ -47,6 +47,7 @@ esp_err_t settings_to_json(settings_storage_t* settings, char* buf, size_t buf_l
     return (succeeded != 0 ? ESP_OK : ESP_FAIL);
 }
 
+// buf_len must include null termination
 esp_err_t json_to_settings(char* buf, size_t buf_len, settings_storage_t* settings)
 {
     if (!is_string_null_terminated(buf, buf_len))
@@ -61,6 +62,7 @@ esp_err_t json_to_settings(char* buf, size_t buf_len, settings_storage_t* settin
     }
 
     cJSON* json = cJSON_Parse(buf);
+    ESP_LOGI(TAG, "%s json: %p", __FUNCTION__, json);
 
     if (json == NULL)
     {
@@ -84,18 +86,20 @@ esp_err_t json_to_settings(char* buf, size_t buf_len, settings_storage_t* settin
         cJSON_ArrayForEach(child, json)
         {
             // the current settings schema is all numbers.
-            if (cJSON_IsNumber(child) == cJSON_False)
+            if (!cJSON_IsNumber(child))
             {
-                ESP_LOGI(TAG, "%s: discarding top-level JSON field %s because it is not a number", __FUNCTION__, json->string);
+                ESP_LOGI(TAG, "%s: discarding top-level JSON field %s because it is not a number", __FUNCTION__, child->string == NULL ? "<NULL>" : json->string);
                 continue;
             }
             if (0 == strcmp(child->string, "alarm_hour"))
             {
+                ESP_LOGI(TAG, "Changing alarm_hour=%d to %d", settings->alarm_hour, child->valueint);
                 // range checks could be done here, but the worst case is strange behavior not bad behavior.
                 settings->alarm_hour = child->valueint;
             }
             else if (0 == strcmp(child->string, "alarm_hour"))
             {
+                ESP_LOGI(TAG, "Changing alarm_minute=%d to %d", settings->alarm_minute, child->valueint);
                 settings->alarm_minute = child->valueint;
             }
         }
