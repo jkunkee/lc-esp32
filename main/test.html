@@ -6,42 +6,26 @@
 <h1>CONFIG_LC_MDNS_INSTANCE Control Panel</h1>
 <h2>Alarm Clock Settings</h2>
 <p>Time: <select id="alarm_hour"></select>:<select id="alarm_minute"></select></p>
+<!-- positioned at end so DOM elements are loaded -->
 <script>
-// positioned at end so DOM elements are loaded
-(function() {
-//var settings_response = await fetch('/settings');
-//var settings = await settings_response.json();
-var settings = {
-    "alarm_hour": 8,
-    "alarm_minute": 45,
-};
+(async function() {
+var settings_response = await fetch('/settings');
+var settings = await settings_response.json();
 Object.keys(settings).forEach(function(setting_name) {
-
+    // Find the tag
+    var elem = document.getElementById(setting_name);
+    if (elem === null) { return; }
+    // Populate the tag with possible values
+    var range = settings.ranges[setting_name]
+    range.forEach(function(val){
+        var option_elem = document.createElement('option');
+        option_elem.setAttribute('value', ''+val);
+        option_elem.innerText = ''+val;
+        elem.appendChild(option_elem);
+    });
+    // Set the value
+    elem.selectedIndex = range.indexOf(settings[setting_name]);
 });
-var alarm_hour_elem = document.getElementById('alarm_hour');
-for (var hour = 1; hour <= 23; hour++) {
-    var option_elem = document.createElement('option');
-    option_elem.setAttribute('value', ''+hour);
-    option_elem.innerText = ''+hour;
-    alarm_hour_elem.appendChild(option_elem);
-}
-var alarm_min_elem = document.getElementById('alarm_minute');
-for (var minute = 0; minute < 60; minute++) {
-    var option_elem = document.createElement('option');
-    option_elem.setAttribute('value', ''+minute);
-    option_elem.innerText = ''+minute;
-    alarm_min_elem.appendChild(option_elem);
-}
-// TODO: query real settings
-var settings = {"alarm_hour":7,"alarm_minute":15};
-Object.keys(settings).forEach(function(key){
-    var sel_elem = document.getElementById(key);
-    var val = settings[key];
-    // TODO: actually map settings to dropdown values somehow
-    sel_elem.selectedIndex = val-1;
-});
-// this is a zero-based array index
-alarm_hour_elem.selectedIndex = 4-1;
 }());
 </script>
 </body></html>
