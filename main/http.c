@@ -42,7 +42,7 @@ static esp_err_t settings_get_handler(httpd_req_t *req)
     size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
     buf = malloc(buf_len);
     buf[buf_len-1] = '\0';
-    ESP_ERROR_CHECK_WITHOUT_ABORT( settings_to_json(&current_settings, buf, buf_len-1) );
+    ESP_ERROR_CHECK_WITHOUT_ABORT( settings_to_json(buf, buf_len-1) );
     ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_resp_set_type(req, "application/json") );
     esp_err_t send_err = httpd_resp_send(req, buf, strlen(buf));
     free(buf);
@@ -70,7 +70,7 @@ static esp_err_t settings_put_handler(httpd_req_t *req)
         return ESP_OK;
     }
 
-    esp_err_t status = json_to_settings(buf, buf_len, &current_settings);
+    esp_err_t status = json_to_settings(buf, buf_len);
     free(buf);
     if (status != ESP_OK)
     {

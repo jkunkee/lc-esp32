@@ -11,16 +11,39 @@
 // strcmp
 #include <string.h>
 
-RTC_DATA_ATTR settings_storage_t current_settings = {
-    .alarm_hour = 7,
-    .alarm_minute = 45,
-    .alarm_enabled = pdTRUE,
-    .alarm_led_pattern = fill_white,
-    .alarm_snooze_interval_min = 10,
+// LWIP_ARRAYSIZE
+#include <lwip/def.h>
 
-    .sleep_delay_min = 15,
-    .sleep_fade_time_min = 10,
+#define RANGE_ARRAY(...) __VA_ARGS__
+
+typedef struct _setting_definition
+{
+    char* name;
+    // coerce everything to int so I don't have to pass types around in C.
+    int value;
+    int* value_range_array;
+    int value_range_array_len;
+} setting_definition;
+
+#define DEFINE_SETTING(sname, default, range_array) \
+{ \
+    .name = #sname, \
+    .value = (int)default, \
+    .value_range_array = (int[])range_array, \
+    .value_range_array_len = LWIP_ARRAYSIZE(RANGE_ARRAY((int[])range_array)), \
+}
+
+setting_definition settings[] = {
+    DEFINE_SETTING(alarm_hour, 7, RANGE_ARRAY({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})),
+    DEFINE_SETTING(alarm_minute, 30, RANGE_ARRAY({0, 15, 30, 45})),
+    DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
+    DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({fill_white, sudden_white})),
+    DEFINE_SETTING(alarm_snooze_interval_min, 10, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
+
+    DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 20, 30, 45, 60})),
+    DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30})),
 };
+int settings_len = LWIP_ARRAYSIZE(settings);
 
 bool is_string_null_terminated(char* buf, size_t buf_len)
 {
@@ -34,11 +57,87 @@ bool is_string_null_terminated(char* buf, size_t buf_len)
     return pdFALSE;
 }
 
-esp_err_t settings_to_json(settings_storage_t* settings, char* buf, size_t buf_len)
+setting_definition* find_setting(char* name)
+{
+    setting_definition* setting_found = NULL;
+    // N.B. This will not scale to lots of settings.
+    for (int settingIdx = 0; settingIdx < settings_len; settingIdx++)
+    {
+        setting_definition* setting = &settings[settingIdx];
+        if (0 == strcmp(name, setting->name))
+        {
+            setting_found = setting;
+            break;
+        }
+    }
+    return setting_found;
+}
+
+esp_err_t get_setting(char* name, uint32_t* value)
+{
+    if (name == NULL || value == NULL)
+    {
+        ESP_LOGE(TAG, "%s given a null argument (%p %p)", __FUNCTION__, name, value);
+        return ESP_FAIL;
+    }
+
+    setting_definition* setting = find_setting(name);
+    if (setting != NULL)
+    {
+        *value = setting->value;
+        return ESP_OK;
+    }
+    else
+    {
+        ESP_LOGE(TAG, "%s: setting %s not found", __FUNCTION__, name);
+        return ESP_FAIL;
+    }
+}
+
+esp_err_t set_setting(char* name, uint32_t value)
+{
+    if (name == NULL)
+    {
+        ESP_LOGE(TAG, "%s given a null name", __FUNCTION__);
+        return ESP_FAIL;
+    }
+
+    setting_definition* setting = find_setting(name);
+    if (setting == NULL)
+    {
+        ESP_LOGE(TAG, "%s: setting %s not found", __FUNCTION__, name);
+        return ESP_FAIL;
+    }
+
+    // N.B. This will also not scale to lots of settings.
+    bool is_value_valid = pdFALSE;
+    for (int validValueIdx = 0; validValueIdx < setting->value_range_array_len; validValueIdx++)
+    {
+        if (value == setting->value_range_array[validValueIdx])
+        {
+            is_value_valid = pdTRUE;
+            break;
+        }
+    }
+    if (!is_value_valid)
+    {
+        ESP_LOGE(TAG, "%s: invalid %s value (%d) provided", __FUNCTION__, name, value);
+        return ESP_FAIL;
+    }
+
+    setting->value = value;
+    return ESP_OK;
+}
+
+esp_err_t settings_to_json(char* buf, size_t buf_len)
 {
     cJSON* root = cJSON_CreateObject();
-    cJSON_AddNumberToObject(root, "alarm_hour", (double)settings->alarm_hour);
-    cJSON_AddNumberToObject(root, "alarm_minute", (double)settings->alarm_minute);
+
+    for (int settingIdx = 0; settingIdx < settings_len; settingIdx++)
+    {
+        cJSON_AddNumberToObject(root, settings[settingIdx].name, (double)(settings[settingIdx].value));
+    }
+    // TODO add range arrays to JSON output
 
     // N.B. buf_len > max_signed_int is not handled
     // '- 5' is according to the function declaration comments
@@ -48,7 +147,7 @@ esp_err_t settings_to_json(settings_storage_t* settings, char* buf, size_t buf_l
 }
 
 // buf_len must include null termination
-esp_err_t json_to_settings(char* buf, size_t buf_len, settings_storage_t* settings)
+esp_err_t json_to_settings(char* buf, size_t buf_len)
 {
     if (!is_string_null_terminated(buf, buf_len))
     {
@@ -91,17 +190,8 @@ esp_err_t json_to_settings(char* buf, size_t buf_len, settings_storage_t* settin
                 ESP_LOGI(TAG, "%s: discarding top-level JSON field %s because it is not a number", __FUNCTION__, child->string == NULL ? "<NULL>" : json->string);
                 continue;
             }
-            if (0 == strcmp(child->string, "alarm_hour"))
-            {
-                ESP_LOGI(TAG, "Changing alarm_hour=%d to %d", settings->alarm_hour, child->valueint);
-                // range checks could be done here, but the worst case is strange behavior not bad behavior.
-                settings->alarm_hour = child->valueint;
-            }
-            else if (0 == strcmp(child->string, "alarm_hour"))
-            {
-                ESP_LOGI(TAG, "Changing alarm_minute=%d to %d", settings->alarm_minute, child->valueint);
-                settings->alarm_minute = child->valueint;
-            }
+            // TODO for now only log bad values, should later refactor to report invalid via http
+            set_setting(child->string, child->valueint);
         }
     }
 
