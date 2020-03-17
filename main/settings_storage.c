@@ -132,12 +132,14 @@ esp_err_t set_setting(char* name, uint32_t value)
 esp_err_t settings_to_json(char* buf, size_t buf_len)
 {
     cJSON* root = cJSON_CreateObject();
+    cJSON* range_object = cJSON_AddObjectToObject(root, "ranges");
 
     for (int settingIdx = 0; settingIdx < settings_len; settingIdx++)
     {
         cJSON_AddNumberToObject(root, settings[settingIdx].name, (double)(settings[settingIdx].value));
+        cJSON* range_array = cJSON_CreateIntArray(settings[settingIdx].value_range_array, settings[settingIdx].value_range_array_len);
+        cJSON_AddItemToObject(range_object, settings[settingIdx].name, range_array);
     }
-    // TODO add range arrays to JSON output
 
     // N.B. buf_len > max_signed_int is not handled
     // '- 5' is according to the function declaration comments

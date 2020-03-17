@@ -305,13 +305,6 @@ void app_main(void)
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
     ESP_LOGI(TAG, "Initializing SNTP complete.");
 
-    char* test_json = "{\"alarm_hour\":8}";
-    ESP_ERROR_CHECK( json_to_settings(test_json, strlen(test_json)+1) );
-    ESP_ERROR_CHECK( set_setting("alarm_minute", 4) );
-    char buf[64];
-    ESP_ERROR_CHECK( settings_to_json(buf, 64) );
-    ESP_LOGI(TAG, "Config JSON: %s", buf);
-
     uint32_t switch_count = 0;
     while (pdTRUE)
     {
