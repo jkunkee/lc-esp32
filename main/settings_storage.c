@@ -38,7 +38,7 @@ setting_definition settings[] = {
     DEFINE_SETTING(alarm_minute, 30, RANGE_ARRAY({0, 15, 30, 45})),
     DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
     DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({fill_white, sudden_white})),
-    DEFINE_SETTING(alarm_snooze_interval_min, 10, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
+    DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
 
     DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 20, 30, 45, 60})),
     DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30})),

@@ -14,14 +14,7 @@
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 http"
 
-static const char* main_page_content =
-"<html><head><title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title></head>"
-"<body>"
-"<script> \
-</script>"
-"<h1>"CONFIG_LC_MDNS_INSTANCE" Control Panel</h1>"
-"<p>Hello world</p>"
-"</body></html>";
+#include "homepage.c"
 
 static esp_err_t main_page_get_handler(httpd_req_t *req)
 {
@@ -83,7 +76,7 @@ static esp_err_t settings_put_handler(httpd_req_t *req)
 
 static const httpd_uri_t settings_put = {
     .uri       = "/settings",
-    .method    = HTTP_PUT,
+    .method    = HTTP_POST,
     .handler   = settings_put_handler,
     .user_ctx  = NULL,
 };

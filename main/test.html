@@ -2,15 +2,31 @@
 <title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 </head>
-<body>
+<body bgcolor="0x111111" style="color: #BBBBEE;">
 <h1>CONFIG_LC_MDNS_INSTANCE Control Panel</h1>
+<h2>Actions</h2>
+<p>Alarm:
+<button id="alarm_snooze">Snooze</button>
+<button id="alarm_stop">Stop</button></p>
+<p>Sleep Timer: <button id="sleep_start">Start</button> <button id="sleep_stop">Stop</button></p>
+<p>LEDs: <button>Run Selected Alarm LED Pattern</button></p>
 <h2>Alarm Clock Settings</h2>
 <p>Time: <select id="alarm_hour"></select>:<select id="alarm_minute"></select></p>
-<!-- positioned at end so DOM elements are loaded -->
+<p>Enabled: <select id="alarm_enabled"></select></p>
+<p>LED Pattern: <select id="alarm_led_pattern"></select></p>
+<p>Snooze Interval (min): <select id="alarm_snooze_interval_min"></select></p>
+<h2>Sleep Timer Settings</h2>
+<p>Sleep Delay: <select id="sleep_delay_min"></select>&nbsp;minutes from trigger to fade start</p>
+<p>Sleep Fade Time: <select id="sleep_fade_time_min"></select>&nbsp;minutes from fade start to full-off</p>
+<h2>Save Settings</h2>
+<p><button id="save">Save</button></p>
+<!-- positioned at end so DOM elements are already loaded -->
 <script>
 (async function() {
-var settings_response = await fetch('/settings');
-var settings = await settings_response.json();
+"use strict";
+//var settings_response = await fetch('/settings');
+//var settings = await settings_response.json();
+var settings = JSON.parse("{\"ranges\":{\"alarm_hour\":[1,2,3,4,5,6,7,8,9,10,11,12],\"alarm_minute\":[0,15,30,45],\"alarm_enabled\":[0,1],\"alarm_led_pattern\":[1,0],\"alarm_snooze_interval_min\":[1,3,5,7,9,11,13,15],\"sleep_delay_min\":[1,3,5,8,10,15,20,30,45,60],\"sleep_fade_time_min\":[1,3,5,8,10,15,30]},\"alarm_hour\":7,\"alarm_minute\":30,\"alarm_enabled\":1,\"alarm_led_pattern\":1,\"alarm_snooze_interval_min\":9,\"sleep_delay_min\":30,\"sleep_fade_time_min\":15}");
 Object.keys(settings).forEach(function(setting_name) {
     // Find the tag
     var elem = document.getElementById(setting_name);
@@ -26,6 +42,24 @@ Object.keys(settings).forEach(function(setting_name) {
     // Set the value
     elem.selectedIndex = range.indexOf(settings[setting_name]);
 });
+function gather_settings() {
+    var new_settings = {};
+    Object.keys(settings).forEach(function(setting_name) {
+        var elem = document.getElementById(setting_name);
+        if (elem === null) { return; }
+        var val_array = settings.ranges[setting_name];
+        new_settings[setting_name] = settings.ranges[setting_name][elem.selectedIndex];
+    });
+    return new_settings;
+}
+async function post_settings() {
+    await fetch('/settings', {
+        method: 'POST',
+        body: JSON.stringify(gather_settings()),
+        headers: { 'Content-Type': 'application/json' }
+    });
+}
+document.getElementById("save").onclick = post_settings;
 }());
 </script>
 </body></html>
