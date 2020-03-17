@@ -9,6 +9,15 @@
 <script>
 // positioned at end so DOM elements are loaded
 (function() {
+//var settings_response = await fetch('/settings');
+//var settings = await settings_response.json();
+var settings = {
+    "alarm_hour": 8,
+    "alarm_minute": 45,
+};
+Object.keys(settings).forEach(function(setting_name) {
+
+});
 var alarm_hour_elem = document.getElementById('alarm_hour');
 for (var hour = 1; hour <= 23; hour++) {
     var option_elem = document.createElement('option');
