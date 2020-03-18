@@ -19,7 +19,10 @@ typedef enum _led_pattern
     brightness_gradient,
     status_indicators,
     local_time_in_unix_epoch_seconds,
+    led_pattern_max
 } led_pattern_t;
+
+extern const char* led_pattern_names[];
 
 typedef enum _led_status_index
 {

@@ -37,7 +37,7 @@ setting_definition settings[] = {
     DEFINE_SETTING(alarm_hour, 7, RANGE_ARRAY({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12})),
     DEFINE_SETTING(alarm_minute, 30, RANGE_ARRAY({0, 15, 30, 45})),
     DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
-    DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({fill_white, sudden_white})),
+    DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({})),
     DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
 
     DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 20, 30, 45, 60})),
@@ -140,6 +140,10 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
         cJSON* range_array = cJSON_CreateIntArray(settings[settingIdx].value_range_array, settings[settingIdx].value_range_array_len);
         cJSON_AddItemToObject(range_object, settings[settingIdx].name, range_array);
     }
+
+    cJSON_DeleteItemFromObject(range_object, "alarm_led_pattern");
+    cJSON* alarm_pattern_range_array = cJSON_CreateStringArray(&led_pattern_names[0], led_pattern_max-1);
+    cJSON_AddItemToObject(range_object, "alarm_led_pattern", alarm_pattern_range_array);
 
     // N.B. buf_len > max_signed_int is not handled
     // '- 5' is according to the function declaration comments
