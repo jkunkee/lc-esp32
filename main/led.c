@@ -208,6 +208,9 @@ led_err_t led_run_async(led_pattern_t p)
         localtime(&now);
         show_integer(1, sizeof(now)*8, now, 0, 0);
         break;
+    case led_pattern_blank:
+        fill_all_rgb(0, 0, 0, 100);
+        break;
     default:
         retVal = led_err_invalid_pattern;
     }

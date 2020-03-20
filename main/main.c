@@ -38,6 +38,9 @@ void lc_http_stop(void);
 // LED strip interop
 #include "led.h"
 
+// Alarm/Sleep interop
+#include "alarm.h"
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 main"
 
@@ -137,6 +140,9 @@ void on_time_sync_notification(struct timeval *tv)
     // Log the time
     ESP_LOGI(TAG, "BOING! BOING! The current time is: %s", time_string);
     led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_SUCCESS);
+
+    // Start the alarm
+    alarm_system_time_or_settings_changed();
 }
 
 #define TIME_CHECK_TASK_TAG "time_check_task"
@@ -304,6 +310,14 @@ void app_main(void)
 
     xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
     ESP_LOGI(TAG, "Initializing SNTP complete.");
+
+    // Set up the alarm/sleep system
+
+    ESP_LOGI(TAG, "Initializing Alarm/Sleep...");
+    led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_BUSY);
+    ESP_ERROR_CHECK(init_alarm());
+    ESP_LOGI(TAG, "Initializing Alarm/Sleep complete.");
+    led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_SUCCESS);
 
     uint32_t switch_count = 0;
     while (pdTRUE)

@@ -19,6 +19,7 @@ typedef enum _led_pattern
     brightness_gradient,
     status_indicators,
     local_time_in_unix_epoch_seconds,
+    led_pattern_blank,
     led_pattern_max
 } led_pattern_t;
 
@@ -32,6 +33,7 @@ typedef enum _led_status_index
     led_status_wifi,
     led_status_mdns,
     led_status_sntp,
+    led_status_alarm,
     led_status_MAX
 } led_status_index;
 
