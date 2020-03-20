@@ -14,6 +14,9 @@
 // LWIP_ARRAYSIZE
 #include <lwip/def.h>
 
+// notify alarm module of settings changes
+#include "alarm.h"
+
 #define RANGE_ARRAY(...) __VA_ARGS__
 
 typedef struct _setting_definition
@@ -119,6 +122,16 @@ esp_err_t set_setting(char* name, uint32_t value)
             break;
         }
     }
+    // special-case the string-based LED pattern setting
+    if (strcmp(name, "alarm_led_pattern") == 0)
+    {
+        is_value_valid = pdFALSE;
+        // value is unsigned and the enum starts at 0, so only the upper bound needs checking
+        if (value < led_pattern_max)
+        {
+            is_value_valid = pdTRUE;
+        }
+    }
     if (!is_value_valid)
     {
         ESP_LOGE(TAG, "%s: invalid %s value (%d) provided", __FUNCTION__, name, value);
@@ -202,6 +215,8 @@ esp_err_t json_to_settings(char* buf, size_t buf_len)
     }
 
     cJSON_Delete(json);
+
+    alarm_system_time_or_settings_changed();
 
     return retVal;
 }
