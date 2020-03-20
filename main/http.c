@@ -11,6 +11,9 @@
 // strlen
 #include <string.h>
 
+// time funcs
+#include <time.h>
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 http"
 
@@ -49,7 +52,7 @@ static const httpd_uri_t settings_get = {
     .user_ctx  = NULL,
 };
 
-static esp_err_t settings_put_handler(httpd_req_t *req)
+static esp_err_t settings_post_handler(httpd_req_t *req)
 {
     char* buf;
     size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
@@ -77,7 +80,89 @@ static esp_err_t settings_put_handler(httpd_req_t *req)
 static const httpd_uri_t settings_put = {
     .uri       = "/settings",
     .method    = HTTP_POST,
-    .handler   = settings_put_handler,
+    .handler   = settings_post_handler,
+    .user_ctx  = NULL,
+};
+
+static esp_err_t command_handler(httpd_req_t *req)
+{
+    // commands come in as parameters
+    size_t buf_len = httpd_req_get_url_query_len(req) + 1;
+    char* buf;
+    if (buf_len > 1) {
+        buf = malloc(buf_len);
+        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Found URL query => %s", buf);
+            // assume full param string will be less than 31 bytes long
+            const size_t param_len = 32;
+            char param[param_len+1];
+            param[param_len] = '\0';
+            // check for all commands in the query string
+            if (httpd_query_key_value(buf, "alarm_snooze", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => alarm_snooze=%s", param);
+            }
+            if (httpd_query_key_value(buf, "alarm_stop", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => alarm_stop=%s", param);
+            }
+            if (httpd_query_key_value(buf, "sleep_start", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => sleep_start=%s", param);
+            }
+            if (httpd_query_key_value(buf, "sleep_stop", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => sleep_stop=%s", param);
+            }
+            if (httpd_query_key_value(buf, "run_pattern", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => run_pattern=%s", param);
+                int pattern = atoi(param);
+                led_run_sync(pattern);
+            }
+        }
+        free(buf);
+        return httpd_resp_send(req, "", 0);
+    }
+    else
+    {
+        return httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Body ignored, parameters required");
+    }
+}
+
+static const httpd_uri_t command_uri = {
+    .uri       = "/command",
+    .method    = HTTP_GET,
+    .handler   = command_handler,
+    .user_ctx  = NULL,
+};
+
+static esp_err_t time_handler(httpd_req_t *req)
+{
+    // read the current time
+    time_t now;
+    time(&now);
+
+    // Convert it to a local time based on TZ
+    struct tm local_now;
+    localtime_r(&now, &local_now);
+
+    // Convert that to a printable string
+    const int time_string_len = 64;
+    char time_string[time_string_len+1];
+    time_string[time_string_len] = '\0';
+    int chars_written = strftime(time_string, time_string_len, "%c", &local_now);
+
+    httpd_resp_set_type(req, "text/plain");
+    if (chars_written < 0 || time_string_len < chars_written)
+    {
+        return httpd_resp_send_500(req);
+    }
+    else
+    {
+        return httpd_resp_send(req, time_string, chars_written);
+    }
+}
+
+static const httpd_uri_t time_uri = {
+    .uri       = "/time",
+    .method    = HTTP_GET,
+    .handler   = time_handler,
     .user_ctx  = NULL,
 };
 
@@ -103,6 +188,8 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &settings_get) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &settings_put) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &main_page) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &command_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
     }
     else
     {
