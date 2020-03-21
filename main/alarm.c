@@ -56,6 +56,7 @@ void alarm_task_func(void* param)
             1000 / portTICK_PERIOD_MS);
 
         time(&now);
+        // TODO: Get more consistent behavior by separating state transitions from state actions
         switch (alarm_current_state)
         {
         case initializing:
