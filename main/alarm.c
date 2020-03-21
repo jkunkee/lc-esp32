@@ -81,10 +81,28 @@ void alarm_task_func(void* param)
             break;
         case waiting:
             ESP_LOGI(TAG, "prev_now: %ld, now: %ld", prev_now, now);
-            //if (/* alarm time has just passed*/)
-            //{
-            //    alarm_current_state = running;
-            //}
+            // calculate when alarm should happen
+            struct tm prev_local_now;
+            localtime_r(&prev_now, &prev_local_now);
+            struct tm local_now;
+            localtime_r(&now, &local_now);
+            // now is guaranteed to be between these three
+            // today alarm time
+            struct tm today_alarm_local_time = local_now;
+            today_alarm_local_time.tm_hour = alarm_hour;
+            today_alarm_local_time.tm_min = alarm_minute;
+            today_alarm_local_time.tm_sec = 0;
+            // https://linux.die.net/man/3/mktime
+            time_t today_alarm_time = mktime(&today_alarm_local_time);
+            // yesterday alarm time
+            // today alarm time
+            // TODO: these two would make it resilient to midnight alarms.
+            // if it was during last wait, trigger alarm
+            if (prev_now <= today_alarm_time && today_alarm_time <= now)
+            {
+                ESP_LOGI(TAG, "Alarm triggered at Unix Epoch %ld", now);
+                alarm_current_state = running;
+            }
             break;
         case snoozing:
             led_run_sync(led_pattern_blank);
@@ -138,7 +156,7 @@ bool is_sleep_running();
 
 esp_err_t init_alarm()
 {
-    alarm_current_state = configuring;
+    alarm_current_state = initializing;
     alarm_event_group = xEventGroupCreate();
     xTaskCreate(alarm_task_func, "time_check_task Task", 4*1024, NULL, 1, &alarm_task);
 
