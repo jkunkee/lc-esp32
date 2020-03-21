@@ -138,41 +138,11 @@ void on_time_sync_notification(struct timeval *tv)
     time_string[LWIP_ARRAYSIZE(time_string) - 1] = '\0';
 
     // Log the time
-    ESP_LOGI(TAG, "BOING! BOING! The current time is: %s", time_string);
+    ESP_LOGI(TAG, "BOING! BOING! Time synced. The current time is: %s", time_string);
     led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_SUCCESS);
 
     // Start the alarm
     alarm_system_time_or_settings_changed();
-}
-
-#define TIME_CHECK_TASK_TAG "time_check_task"
-
-void time_check_task(void* task_param)
-{
-    while (pdTRUE)
-    {
-        vTaskDelay(10*1000 / portTICK_PERIOD_MS);
-
-        ESP_LOGI(TIME_CHECK_TASK_TAG, "time_check_task checking time");
-
-        // read the current time
-        time_t now;
-        time(&now);
-        ESP_LOGI(TIME_CHECK_TASK_TAG, "Raw now: %ld", now);
-
-        // Convert it to a local time based on TZ
-        struct tm local_now;
-        localtime_r(&now, &local_now);
-
-        // Convert that to a printable string
-        char time_string[65];
-        strftime(time_string, LWIP_ARRAYSIZE(time_string)-1, "%c", &local_now);
-        time_string[LWIP_ARRAYSIZE(time_string)-1] = '\0';
-
-        // Log the time
-        ESP_LOGI(TIME_CHECK_TASK_TAG, "At the tone, the current time is: %s", time_string);
-        led_run_sync(local_time_in_unix_epoch_seconds);
-    }
 }
 
 typedef enum _lc_state {
@@ -307,17 +277,14 @@ void app_main(void)
     setenv("TZ", "PST+8PDT,M3.2.0/2,M11.1.0/2", 1);
     tzset();
     led_set_status_indicator(led_status_sntp, LED_STATUS_COLOR_AQUIRING);
-
-    xTaskCreate(time_check_task, "time_check_task Task", 4*1024, NULL, 1, NULL);
     ESP_LOGI(TAG, "Initializing SNTP complete.");
 
     // Set up the alarm/sleep system
 
     ESP_LOGI(TAG, "Initializing Alarm/Sleep...");
-    led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_BUSY);
+    led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_AQUIRING);
     ESP_ERROR_CHECK(init_alarm());
     ESP_LOGI(TAG, "Initializing Alarm/Sleep complete.");
-    led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_SUCCESS);
 
     uint32_t switch_count = 0;
     while (pdTRUE)

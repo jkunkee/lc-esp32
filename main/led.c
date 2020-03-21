@@ -36,6 +36,7 @@ const char* led_pattern_names[] = {
     STR(brightness_gradient),
     STR(status_indicators),
     STR(local_time_in_unix_epoch_seconds),
+    STR(led_pattern_blank),
     STR(led_pattern_max),
 };
 
