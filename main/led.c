@@ -27,11 +27,6 @@
 
 void led_reset_status_indicators();
 
-EventGroupHandle_t s_led_event_group;
-
-//EventGroupHandle_t led_driver_event_group;
-//TaskHandle_t led_driver_thread;
-
 SemaphoreHandle_t led_semaphore;
 
 #define TRANSMOG(n) #n,
@@ -45,9 +40,6 @@ esp_err_t led_init(void)
 {
     int gpios[LED_STRIP_COUNT] = {CONFIG_LC_LED_STRIP_1_DATA_PIN, CONFIG_LC_LED_STRIP_2_DATA_PIN};
     int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_1};
-
-    // Use an event group for animation completion notification
-    s_led_event_group = xEventGroupCreate();
 
     // Use a mutex to only run one pattern at a time
     led_semaphore = xSemaphoreCreateMutex();
@@ -188,10 +180,12 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
     led_refresh_status_indicators();
 }
 
-led_err_t led_run_async(led_pattern_t p)
+esp_err_t led_run_sync(led_pattern_t p)
 {
-    led_err_t retVal = led_err_done;
+    esp_err_t retVal = ESP_OK;
     time_t now;
+
+    xSemaphoreTake(led_semaphore, portMAX_DELAY);
 
     switch (p)
     {
@@ -215,28 +209,10 @@ led_err_t led_run_async(led_pattern_t p)
         fill_all_rgb(LED_STRIP_ACTION_TIMEOUT_MS, 0, 0, 0);
         break;
     default:
-        retVal = led_err_invalid_pattern;
+        retVal = ESP_ERR_INVALID_ARG;
     }
 
-    if (retVal == led_err_done)
-    {
-        // maybe move into pattern function?
-        // Do I really need async?
-        xEventGroupSetBits(s_led_event_group, LED_RUN_COMPLETE_BIT);
-    }
-
-    return retVal;
-}
-
-led_err_t led_run_sync(led_pattern_t p)
-{
-    xSemaphoreTake(led_semaphore, portMAX_DELAY);
-    led_err_t retVal = led_run_async(p);
-    xEventGroupWaitBits(s_led_event_group, LED_RUN_COMPLETE_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
-    if (retVal == led_err_async)
-    {
-        retVal = led_err_done;
-    }
     xSemaphoreGive(led_semaphore);
+
     return retVal;
 }
