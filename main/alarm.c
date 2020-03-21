@@ -174,4 +174,3 @@ esp_err_t init_alarm()
 
     return ESP_OK;
 }
-

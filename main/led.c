@@ -168,6 +168,8 @@ void led_refresh_status_indicators()
     show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0);
 }
 
+bool led_current_display_is_status = pdFALSE;
+
 void led_set_status_indicator(led_status_index idx, led_color_t color)
 {
     // Don't allow setting the end-of-string marker
@@ -177,7 +179,10 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
         return;
     }
     status_bits[idx] = color;
-    led_refresh_status_indicators();
+    if (led_current_display_is_status)
+    {
+        led_refresh_status_indicators();
+    }
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
@@ -211,6 +216,8 @@ esp_err_t led_run_sync(led_pattern_t p)
     default:
         retVal = ESP_ERR_INVALID_ARG;
     }
+
+    led_current_display_is_status = (p == status_indicators);
 
     xSemaphoreGive(led_semaphore);
 

@@ -171,6 +171,7 @@ void app_main(void)
     ESP_ERROR_CHECK(led_init());
     ESP_LOGI(TAG, "Initializing the LED driver complete.");
     led_set_status_indicator(led_status_led, LED_STATUS_COLOR_SUCCESS);
+    led_run_sync(status_indicators);
 
     // Several facilities rely on the default event loop being initialized.
 
