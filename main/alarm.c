@@ -60,6 +60,10 @@ void alarm_task_func(void* param)
         {
         case initializing:
             // wait for first configuration event
+            if (bits & ALARM_RECONFIG_BIT)
+            {
+                led_set_status_indicator(led_status_alarm, LED_STATUS_COLOR_SUCCESS);
+            }
             break;
         case configuring:
             ESP_ERROR_CHECK( get_setting("alarm_enabled", &alarm_enabled_raw) );
