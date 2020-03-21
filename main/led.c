@@ -29,15 +29,9 @@ EventGroupHandle_t s_led_event_group;
 //EventGroupHandle_t led_driver_event_group;
 //TaskHandle_t led_driver_thread;
 
-#define STR(x) (#x)
+#define TRANSMOG(n) #n,
 const char* led_pattern_names[] = {
-    STR(sudden_white),
-    STR(fill_white),
-    STR(brightness_gradient),
-    STR(status_indicators),
-    STR(local_time_in_unix_epoch_seconds),
-    STR(led_pattern_blank),
-    STR(led_pattern_max),
+    LED_PATTERN_NAME_TEMPLATE
 };
 
 led_strip_t* strips[LED_STRIP_COUNT];

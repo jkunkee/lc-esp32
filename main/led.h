@@ -12,16 +12,21 @@
 // FreeRTOS event groups
 #include "freertos/event_groups.h"
 
+#define LED_PATTERN_NAME_TEMPLATE \
+    TRANSMOG(sudden_white) \
+    TRANSMOG(fill_white) \
+    TRANSMOG(brightness_gradient) \
+    TRANSMOG(status_indicators) \
+    TRANSMOG(local_time_in_unix_epoch_seconds) \
+    TRANSMOG(led_pattern_blank) \
+    TRANSMOG(led_pattern_max)
+
+#define TRANSMOG(n) n,
 typedef enum _led_pattern
 {
-    sudden_white,
-    fill_white,
-    brightness_gradient,
-    status_indicators,
-    local_time_in_unix_epoch_seconds,
-    led_pattern_blank,
-    led_pattern_max
+    LED_PATTERN_NAME_TEMPLATE
 } led_pattern_t;
+#undef TRANSMOG
 
 extern const char* led_pattern_names[];
 

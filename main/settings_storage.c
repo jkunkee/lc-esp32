@@ -155,7 +155,7 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
     }
 
     cJSON_DeleteItemFromObject(range_object, "alarm_led_pattern");
-    cJSON* alarm_pattern_range_array = cJSON_CreateStringArray(&led_pattern_names[0], led_pattern_max-1);
+    cJSON* alarm_pattern_range_array = cJSON_CreateStringArray(&led_pattern_names[0], led_pattern_max);
     cJSON_AddItemToObject(range_object, "alarm_led_pattern", alarm_pattern_range_array);
 
     // N.B. buf_len > max_signed_int is not handled
