@@ -14,6 +14,9 @@
 // time funcs
 #include <time.h>
 
+// send the alarm commands
+#include "alarm.h"
+
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 http"
 
@@ -100,9 +103,11 @@ static esp_err_t command_handler(httpd_req_t *req)
             // check for all commands in the query string
             if (httpd_query_key_value(buf, "alarm_snooze", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => alarm_snooze=%s", param);
+                alarm_snooze();
             }
             if (httpd_query_key_value(buf, "alarm_stop", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => alarm_stop=%s", param);
+                alarm_stop();
             }
             if (httpd_query_key_value(buf, "sleep_start", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => sleep_start=%s", param);

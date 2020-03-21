@@ -150,8 +150,16 @@ void alarm_system_time_or_settings_changed()
     xEventGroupSetBits(alarm_event_group, ALARM_RECONFIG_BIT);
 }
 
-esp_err_t alarm_snooze();
-esp_err_t alarm_stop();
+void alarm_snooze()
+{
+    xEventGroupSetBits(alarm_event_group, ALARM_SNOOZE_BIT);
+}
+
+void alarm_stop()
+{
+    xEventGroupSetBits(alarm_event_group, ALARM_STOP_BIT);
+}
+
 bool is_alarm_sounding();
 
 esp_err_t sleep_start();

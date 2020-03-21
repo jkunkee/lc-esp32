@@ -13,8 +13,8 @@
 #include "freertos/event_groups.h"
 
 void alarm_system_time_or_settings_changed();
-esp_err_t alarm_snooze();
-esp_err_t alarm_stop();
+void alarm_snooze();
+void alarm_stop();
 bool is_alarm_sounding();
 
 esp_err_t sleep_start();
