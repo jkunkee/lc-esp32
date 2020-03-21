@@ -5,6 +5,9 @@
 #include "driver/rmt.h"
 #include "led_strip.h"
 
+// Semaphore
+#include <freertos/semphr.h>
+
 // Time functions
 #include "time.h"
 
@@ -29,6 +32,8 @@ EventGroupHandle_t s_led_event_group;
 //EventGroupHandle_t led_driver_event_group;
 //TaskHandle_t led_driver_thread;
 
+SemaphoreHandle_t led_semaphore;
+
 #define TRANSMOG(n) #n,
 const char* led_pattern_names[] = {
     LED_PATTERN_NAME_TEMPLATE
@@ -43,6 +48,9 @@ esp_err_t led_init(void)
 
     // Use an event group for animation completion notification
     s_led_event_group = xEventGroupCreate();
+
+    // Use a mutex to only run one pattern at a time
+    led_semaphore = xSemaphoreCreateMutex();
 
     esp_err_t retVal = ESP_OK;
 
@@ -191,7 +199,7 @@ led_err_t led_run_async(led_pattern_t p)
         set_all_rgb(200, 200, 200);
         break;
     case fill_white:
-        fill_all_rgb(100, 100, 100, 100);
+        fill_all_rgb(LED_STRIP_ACTION_TIMEOUT_MS, 100, 100, 100);
         break;
     case brightness_gradient:
         fill_brightness_gradient(0, 255);
@@ -204,7 +212,7 @@ led_err_t led_run_async(led_pattern_t p)
         show_integer(1, sizeof(now)*8, now, 0, 0);
         break;
     case led_pattern_blank:
-        fill_all_rgb(0, 0, 0, 100);
+        fill_all_rgb(LED_STRIP_ACTION_TIMEOUT_MS, 0, 0, 0);
         break;
     default:
         retVal = led_err_invalid_pattern;
@@ -222,11 +230,13 @@ led_err_t led_run_async(led_pattern_t p)
 
 led_err_t led_run_sync(led_pattern_t p)
 {
+    xSemaphoreTake(led_semaphore, portMAX_DELAY);
     led_err_t retVal = led_run_async(p);
     xEventGroupWaitBits(s_led_event_group, LED_RUN_COMPLETE_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
     if (retVal == led_err_async)
     {
         retVal = led_err_done;
     }
+    xSemaphoreGive(led_semaphore);
     return retVal;
 }
