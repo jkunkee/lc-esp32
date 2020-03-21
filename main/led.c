@@ -179,10 +179,14 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
         return;
     }
     status_bits[idx] = color;
+
+    // This debugging facility needs to be coordinated with the normal path.
+    xSemaphoreTake(led_semaphore, portMAX_DELAY);
     if (led_current_display_is_status)
     {
         led_refresh_status_indicators();
     }
+    xSemaphoreGive(led_semaphore);
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
