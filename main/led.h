@@ -32,6 +32,7 @@ extern const char* led_pattern_names[];
 
 typedef enum _led_status_index
 {
+    led_status_full_system,
     led_status_led,
     led_status_nvs,
     led_status_netif,

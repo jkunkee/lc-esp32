@@ -173,6 +173,9 @@ void app_main(void)
     led_set_status_indicator(led_status_led, LED_STATUS_COLOR_SUCCESS);
     led_run_sync(status_indicators);
 
+    // Reflect the state of this function in the status LED set
+    led_set_status_indicator(led_status_full_system, LED_STATUS_COLOR_AQUIRING);
+
     // Several facilities rely on the default event loop being initialized.
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
@@ -336,8 +339,7 @@ void app_main(void)
 
             break;
         case run:
-            ESP_ERROR_CHECK(led_run_sync(fill_white));
-            led_run_sync(status_indicators);
+            led_set_status_indicator(led_status_full_system, LED_STATUS_COLOR_SUCCESS);
             xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
             ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;
