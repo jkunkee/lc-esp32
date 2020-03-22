@@ -165,6 +165,7 @@ void led_refresh_status_indicators()
 
     time_t now;
     time(&now);
+    // N.B. Will fail with 64-bit time_t
     show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0);
 }
 
