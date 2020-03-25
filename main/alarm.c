@@ -19,17 +19,22 @@ typedef enum _alarm_wait_task_state_t
     waiting,
     snoozing,
     running,
+    sleep_mode,
     disabled,
 } alarm_wait_task_state_t;
 
 #define ALARM_STOP_BIT BIT0
 #define ALARM_SNOOZE_BIT BIT1
 #define ALARM_RECONFIG_BIT BIT2
+#define SLEEP_START_BIT BIT3
+#define SLEEP_STOP_BIT BIT4
 
 #define ALARM_ALL_BITS ( \
       ALARM_STOP_BIT \
     | ALARM_SNOOZE_BIT \
     | ALARM_RECONFIG_BIT \
+    | SLEEP_START_BIT \
+    | SLEEP_STOP_BIT \
     )
 
 static alarm_wait_task_state_t alarm_current_state;
