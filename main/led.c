@@ -190,6 +190,45 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
     xSemaphoreGive(led_semaphore);
 }
 
+#define FADE_START_COLOR ((led_color_t){ .r = 150, .g = 100, .b = 80 })
+static led_color_t fade_current_color = FADE_START_COLOR;
+static led_color_t fade_step_interval = { 0 };
+const int FADE_STEP_COUNT = 40;
+#define FADE_PX_DELAY_MS 150
+
+void fade_start()
+{
+    fade_current_color = FADE_START_COLOR;
+    fill_all_rgb(FADE_PX_DELAY_MS, fade_current_color.r, fade_current_color.g, fade_current_color.b);
+    fade_step_interval.r = FADE_START_COLOR.r / FADE_STEP_COUNT;
+    fade_step_interval.g = FADE_START_COLOR.g / FADE_STEP_COUNT;
+    fade_step_interval.b = FADE_START_COLOR.b / FADE_STEP_COUNT;
+    // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
+    fade_step_interval.r += 1;
+    fade_step_interval.g += 1;
+    fade_step_interval.b += 1;
+}
+
+void fade_step()
+{
+    if (fade_current_color.r >= fade_step_interval.r &&
+        fade_current_color.g >= fade_step_interval.g &&
+        fade_current_color.b >= fade_step_interval.b
+        )
+    {
+        fade_current_color.r -= fade_step_interval.r;
+        fade_current_color.g -= fade_step_interval.g;
+        fade_current_color.b -= fade_step_interval.b;
+    }
+    else
+    {
+        fade_current_color.r = 0;
+        fade_current_color.g = 0;
+        fade_current_color.b = 0;
+    }
+    fill_all_rgb(FADE_PX_DELAY_MS, fade_current_color.r, fade_current_color.g, fade_current_color.b);
+}
+
 esp_err_t led_run_sync(led_pattern_t p)
 {
     esp_err_t retVal = ESP_OK;
@@ -203,7 +242,7 @@ esp_err_t led_run_sync(led_pattern_t p)
         set_all_rgb(200, 200, 200);
         break;
     case fill_white:
-        fill_all_rgb(LED_STRIP_ACTION_TIMEOUT_MS, 100, 100, 100);
+        fill_all_rgb(150, 100, 100, 100);
         break;
     case brightness_gradient:
         fill_brightness_gradient(0, 255);
@@ -216,7 +255,13 @@ esp_err_t led_run_sync(led_pattern_t p)
         show_integer(1, sizeof(now)*8, now, 0, 0);
         break;
     case led_pattern_blank:
-        fill_all_rgb(LED_STRIP_ACTION_TIMEOUT_MS, 0, 0, 0);
+        fill_all_rgb(150, 0, 0, 0);
+        break;
+    case led_pattern_fade_start:
+        fade_start();
+        break;
+    case led_pattern_fade_step:
+        fade_step();
         break;
     default:
         retVal = ESP_ERR_INVALID_ARG;

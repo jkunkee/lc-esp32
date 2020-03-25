@@ -19,6 +19,8 @@
     TRANSMOG(status_indicators) \
     TRANSMOG(local_time_in_unix_epoch_seconds) \
     TRANSMOG(led_pattern_blank) \
+    TRANSMOG(led_pattern_fade_start) \
+    TRANSMOG(led_pattern_fade_step) \
     TRANSMOG(led_pattern_max)
 
 #define TRANSMOG(n) n,
@@ -29,6 +31,8 @@ typedef enum _led_pattern
 #undef TRANSMOG
 
 extern const char* led_pattern_names[];
+
+extern const int FADE_STEP_COUNT;
 
 typedef enum _led_status_index
 {
@@ -44,9 +48,9 @@ typedef enum _led_status_index
 } led_status_index;
 
 typedef struct _led_color_t {
-    char r;
-    char g;
-    char b;
+    unsigned char r;
+    unsigned char g;
+    unsigned char b;
 } led_color_t;
 
 #define LED_STATUS_COLOR_OFF ((led_color_t){.r = 0, .g = 0, .b = 0})
