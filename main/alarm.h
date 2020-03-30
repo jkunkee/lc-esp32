@@ -15,10 +15,8 @@
 void alarm_system_time_or_settings_changed();
 void alarm_snooze();
 void alarm_stop();
-bool is_alarm_sounding();
 
-esp_err_t sleep_start();
-esp_err_t sleep_stop();
-bool is_sleep_running();
+void sleep_start();
+void sleep_stop();
 
 esp_err_t init_alarm();

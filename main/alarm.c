@@ -242,11 +242,15 @@ void alarm_stop()
     xEventGroupSetBits(alarm_event_group, ALARM_STOP_BIT);
 }
 
-bool is_alarm_sounding();
+void sleep_start()
+{
+    xEventGroupSetBits(alarm_event_group, SLEEP_START_BIT);
+}
 
-esp_err_t sleep_start();
-esp_err_t sleep_stop();
-bool is_sleep_running();
+void sleep_stop()
+{
+    xEventGroupSetBits(alarm_event_group, SLEEP_STOP_BIT);
+}
 
 esp_err_t init_alarm()
 {

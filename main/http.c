@@ -111,9 +111,11 @@ static esp_err_t command_handler(httpd_req_t *req)
             }
             if (httpd_query_key_value(buf, "sleep_start", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => sleep_start=%s", param);
+                sleep_start();
             }
             if (httpd_query_key_value(buf, "sleep_stop", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => sleep_stop=%s", param);
+                sleep_stop();
             }
             if (httpd_query_key_value(buf, "run_pattern", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => run_pattern=%s", param);
