@@ -96,7 +96,7 @@ void alarm_task_func(void* param)
             localtime_r(&prev_now, &prev_local_now);
             struct tm local_now;
             localtime_r(&now, &local_now);
-            // now is guaranteed to be between these three
+            // now is guaranteed to be between these three times
             // today alarm time
             struct tm today_alarm_local_time = local_now;
             today_alarm_local_time.tm_hour = alarm_hour;
@@ -105,10 +105,24 @@ void alarm_task_func(void* param)
             // https://linux.die.net/man/3/mktime
             time_t today_alarm_time = mktime(&today_alarm_local_time);
             // yesterday alarm time
-            // today alarm time
-            // TODO: these two would make it resilient to midnight alarms.
+            struct tm yesterday_alarm_local_time = local_now;
+            yesterday_alarm_local_time.tm_hour = alarm_hour;
+            yesterday_alarm_local_time.tm_min = alarm_minute;
+            yesterday_alarm_local_time.tm_sec = 0;
+            yesterday_alarm_local_time.tm_yday -= 1;
+            time_t yesterday_alarm_time = mktime(&yesterday_alarm_local_time);
+            // tomorrow alarm time
+            struct tm tomorrow_alarm_local_time = local_now;
+            tomorrow_alarm_local_time.tm_hour = alarm_hour;
+            tomorrow_alarm_local_time.tm_min = alarm_minute;
+            tomorrow_alarm_local_time.tm_sec = 0;
+            tomorrow_alarm_local_time.tm_yday -= 1;
+            time_t tomorrow_alarm_time = mktime(&tomorrow_alarm_local_time);
             // if it was during last wait, trigger alarm
-            if (prev_now <= today_alarm_time && today_alarm_time <= now)
+            // Checking all three makes this resilient to near-midnight alarm times
+            if ((prev_now <= yesterday_alarm_time && yesterday_alarm_time <= now) ||
+                (prev_now <= today_alarm_time && today_alarm_time <= now) ||
+                (prev_now <= tomorrow_alarm_time && tomorrow_alarm_time <= now) )
             {
                 ESP_LOGI(TAG, "Alarm triggered at Unix Epoch %ld", now);
                 alarm_current_state = running;
