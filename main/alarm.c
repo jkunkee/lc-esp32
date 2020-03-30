@@ -54,6 +54,7 @@ void alarm_task_func(void* param)
     uint32_t alarm_led_pattern_raw = 0;
     led_pattern_t alarm_pattern = fill_white;
     int sleep_mode_step_count = 0;
+    time_t snooze_start_time = 0;
     while (pdTRUE)
     {
         EventBits_t bits = xEventGroupWaitBits(alarm_event_group,
@@ -61,6 +62,8 @@ void alarm_task_func(void* param)
             pdTRUE,
             pdFALSE,
             1000 / portTICK_PERIOD_MS);
+
+        time(&now);
 
         // Encode state transitions separate from state actions
         // Note that this design will swallow simultaneously set bits.
@@ -90,17 +93,18 @@ void alarm_task_func(void* param)
             }
             else if (alarm_enabled)
             {
-                // calculate when alarm should happen
+                // convert running timestamps into local times
                 struct tm prev_local_now;
                 localtime_r(&prev_now, &prev_local_now);
                 struct tm local_now;
                 localtime_r(&now, &local_now);
-                // now is guaranteed to be between these three times
+                // the current now is guaranteed to be between these three times
                 // today alarm time
                 struct tm today_alarm_local_time = local_now;
                 today_alarm_local_time.tm_hour = alarm_hour;
                 today_alarm_local_time.tm_min = alarm_minute;
                 today_alarm_local_time.tm_sec = 0;
+                // trust mktime to handle all the nastiness of adding/subtracting/setting time
                 // https://linux.die.net/man/3/mktime
                 time_t today_alarm_time = mktime(&today_alarm_local_time);
                 // yesterday alarm time
@@ -108,14 +112,14 @@ void alarm_task_func(void* param)
                 yesterday_alarm_local_time.tm_hour = alarm_hour;
                 yesterday_alarm_local_time.tm_min = alarm_minute;
                 yesterday_alarm_local_time.tm_sec = 0;
-                yesterday_alarm_local_time.tm_yday -= 1;
+                yesterday_alarm_local_time.tm_mday -= 1;
                 time_t yesterday_alarm_time = mktime(&yesterday_alarm_local_time);
                 // tomorrow alarm time
                 struct tm tomorrow_alarm_local_time = local_now;
                 tomorrow_alarm_local_time.tm_hour = alarm_hour;
                 tomorrow_alarm_local_time.tm_min = alarm_minute;
                 tomorrow_alarm_local_time.tm_sec = 0;
-                tomorrow_alarm_local_time.tm_yday -= 1;
+                tomorrow_alarm_local_time.tm_mday += 1;
                 time_t tomorrow_alarm_time = mktime(&tomorrow_alarm_local_time);
                 // if it was during last wait, trigger alarm
                 // Checking all three makes this resilient to near-midnight alarm times
@@ -137,11 +141,9 @@ void alarm_task_func(void* param)
             {
                 alarm_next_state = configuring;
             }
-            else
+            else if (now - snooze_start_time > alarm_snooze_interval_min * 60)
             {
-                // TODO
                 alarm_next_state = running;
-                // Alarm snooze time transition detection
             }
             break;
         case running:
@@ -176,8 +178,6 @@ void alarm_task_func(void* param)
         }
 
         // per-state actions
-        time(&now);
-
         switch (alarm_current_state)
         {
         case initializing:
@@ -205,8 +205,15 @@ void alarm_task_func(void* param)
             led_run_sync(led_pattern_blank);
             break;
         case running:
-            led_run_sync(led_pattern_blank);
-            led_run_sync(alarm_pattern);
+            if (bits & ALARM_SNOOZE_BIT)
+            {
+                snooze_start_time = now;
+            }
+            else
+            {
+                led_run_sync(led_pattern_blank);
+                led_run_sync(alarm_pattern);
+            }
             break;
         case sleep_mode_start:
             sleep_mode_step_count = 0;
