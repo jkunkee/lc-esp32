@@ -19,7 +19,8 @@ typedef enum _alarm_wait_task_state_t
     waiting,
     snoozing,
     running,
-    sleep_mode,
+    sleep_mode_start,
+    sleep_mode_run,
     disabled,
 } alarm_wait_task_state_t;
 
@@ -52,6 +53,7 @@ void alarm_task_func(void* param)
     uint32_t alarm_snooze_interval_min = 0;
     uint32_t alarm_led_pattern_raw = 0;
     led_pattern_t alarm_pattern = fill_white;
+    int sleep_mode_step_count = 0;
     while (pdTRUE)
     {
         EventBits_t bits = xEventGroupWaitBits(alarm_event_group,
@@ -147,6 +149,21 @@ void alarm_task_func(void* param)
                 alarm_current_state = waiting;
             }
             break;
+        case sleep_mode_start:
+            sleep_mode_step_count = 0;
+            led_run_sync(led_pattern_fade_start);
+            break;
+        case sleep_mode_run:
+            if (sleep_mode_step_count < FADE_STEP_COUNT && !(bits & SLEEP_STOP_BIT))
+            {
+                sleep_mode_step_count++;
+                led_run_sync(led_pattern_fade_step);
+            }
+            else
+            {
+                alarm_current_state = configuring;
+            }
+            break;
         case disabled:
             // wait for reconfiguration
             break;
@@ -156,6 +173,12 @@ void alarm_task_func(void* param)
 
         // When control comes back, we'll compare then and now to see if the alarm should fire.
         prev_now = now;
+
+        // Start the sleep pattern if the alarm is not going off. Alarm will be ignored during this time.
+        if (bits & SLEEP_START_BIT && (alarm_current_state == waiting || alarm_current_state == disabled))
+        {
+            alarm_current_state = sleep_mode_start;
+        }
 
         // In all states, the reconfig bit trumps all.
         if (bits & ALARM_RECONFIG_BIT)
