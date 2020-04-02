@@ -177,6 +177,11 @@ void alarm_task_func(void* param)
             ESP_LOGE(TAG, "Invalid enum value seen! %d", alarm_current_state);
         }
 
+        if (alarm_next_state != alarm_current_state)
+        {
+            ESP_LOGI(TAG, "Alarm state machine transition, %d -> %d", alarm_current_state, alarm_next_state);
+        }
+
         // per-state actions
         switch (alarm_current_state)
         {
