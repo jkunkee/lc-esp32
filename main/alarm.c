@@ -51,12 +51,18 @@ void alarm_task_func(void* param)
     uint32_t alarm_hour = 0;
     uint32_t alarm_minute = 0;
     uint32_t alarm_snooze_interval_min = 0;
+    time_t snooze_start_time = 0;
     uint32_t alarm_led_pattern_raw = 0;
     led_pattern_t alarm_pattern = fill_white;
     int sleep_mode_step_count = 0;
-    time_t snooze_start_time = 0;
+    int sleep_mode_loop_counter = 0;
+    int sleep_delay_min = 0;
+    int sleep_fade_time_min = 0;
+
     while (pdTRUE)
     {
+        // Gather state machine inputs: event bits, current time, previous time, configuration values
+
         EventBits_t bits = xEventGroupWaitBits(alarm_event_group,
             ALARM_ALL_BITS,
             pdTRUE,
@@ -68,6 +74,7 @@ void alarm_task_func(void* param)
         // Encode state transitions separate from state actions
         // Note that this design will swallow simultaneously set bits.
 
+        // Default to staying in the same state.
         alarm_next_state = alarm_current_state;
 
         switch (alarm_current_state)
@@ -193,6 +200,9 @@ void alarm_task_func(void* param)
             }
             break;
         case configuring:
+            // Reset the time interval
+            prev_now = now;
+            // Read and interpret configuration values
             ESP_ERROR_CHECK( get_setting("alarm_enabled", &alarm_enabled_raw) );
             alarm_enabled = alarm_enabled_raw != 0;
             ESP_ERROR_CHECK( get_setting("alarm_hour", &alarm_hour) );
@@ -200,16 +210,20 @@ void alarm_task_func(void* param)
             ESP_ERROR_CHECK( get_setting("alarm_snooze_interval_min", &alarm_snooze_interval_min) );
             ESP_ERROR_CHECK( get_setting("alarm_led_pattern", &alarm_led_pattern_raw) );
             alarm_pattern = (led_pattern_t)alarm_led_pattern_raw;
+            ESP_ERROR_CHECK( get_setting("sleep_delay_min", &sleep_delay_min) );
+            ESP_ERROR_CHECK( get_setting("sleep_fade_time_min", &sleep_fade_time_min) );
+            ESP_LOGI(TAG, "Configuration complete, blanking LEDs");
             led_run_sync(led_pattern_blank);
             break;
         case waiting:
-            // When control comes back, we'll compare them and now to see if the alarm should fire.
+            // When control comes back, we'll compare then and now to see if the alarm should fire.
             prev_now = now;
             break;
         case snoozing:
             led_run_sync(led_pattern_blank);
             break;
         case running:
+            time(&now);
             if (bits & ALARM_SNOOZE_BIT)
             {
                 snooze_start_time = now;
@@ -222,6 +236,7 @@ void alarm_task_func(void* param)
             break;
         case sleep_mode_start:
             sleep_mode_step_count = 0;
+            sleep_mode_loop_counter = 0;
             led_run_sync(led_pattern_fade_start);
             break;
         case sleep_mode_run:
