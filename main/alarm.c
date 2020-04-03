@@ -20,7 +20,8 @@ typedef enum _alarm_wait_task_state_t
     snoozing,
     running,
     sleep_mode_start,
-    sleep_mode_run,
+    sleep_mode_delay,
+    sleep_mode_fade,
 } alarm_wait_task_state_t;
 
 #define ALARM_STOP_BIT BIT0
@@ -42,6 +43,7 @@ static TaskHandle_t alarm_task;
 
 void alarm_task_func(void* param)
 {
+    const int seconds_per_loop = 1;
     alarm_wait_task_state_t alarm_current_state = initializing;
     alarm_wait_task_state_t alarm_next_state = initializing;
     time_t prev_now = 0;
@@ -54,10 +56,14 @@ void alarm_task_func(void* param)
     time_t snooze_start_time = 0;
     uint32_t alarm_led_pattern_raw = 0;
     led_pattern_t alarm_pattern = fill_white;
+    // sleep values
+    time_t sleep_mode_start_time = 0;
+    uint32_t sleep_delay_min = 0;
+    uint32_t sleep_fade_time_min = 0;
     int sleep_mode_step_count = 0;
-    int sleep_mode_loop_counter = 0;
-    int sleep_delay_min = 0;
-    int sleep_fade_time_min = 0;
+    time_t sleep_elapsed_time = 0;
+    time_t sleep_delay = 0;
+    time_t sleep_step = 0;
 
     while (pdTRUE)
     {
@@ -67,7 +73,7 @@ void alarm_task_func(void* param)
             ALARM_ALL_BITS,
             pdTRUE,
             pdFALSE,
-            1000 / portTICK_PERIOD_MS);
+            seconds_per_loop * 1000 / portTICK_PERIOD_MS);
 
         time(&now);
 
@@ -168,10 +174,24 @@ void alarm_task_func(void* param)
             }
             break;
         case sleep_mode_start:
-            alarm_next_state = sleep_mode_run;
+            alarm_next_state = sleep_mode_delay;
             break;
-        case sleep_mode_run:
-            if (bits & SLEEP_STOP_BIT || sleep_mode_step_count >= FADE_STEP_COUNT)
+        case sleep_mode_delay:
+            if (bits & SLEEP_STOP_BIT)
+            {
+                alarm_next_state = waiting;
+            }
+            else if (bits & ALARM_RECONFIG_BIT)
+            {
+                alarm_next_state = configuring;
+            }
+            else if (now - sleep_mode_start_time > sleep_delay)
+            {
+                alarm_next_state = sleep_mode_fade;
+            }
+            break;
+        case sleep_mode_fade:
+            if (bits & SLEEP_STOP_BIT || sleep_mode_step_count > FADE_STEP_COUNT)
             {
                 alarm_next_state = waiting;
             }
@@ -211,7 +231,9 @@ void alarm_task_func(void* param)
             ESP_ERROR_CHECK( get_setting("alarm_led_pattern", &alarm_led_pattern_raw) );
             alarm_pattern = (led_pattern_t)alarm_led_pattern_raw;
             ESP_ERROR_CHECK( get_setting("sleep_delay_min", &sleep_delay_min) );
+            sleep_delay = sleep_delay_min * 60;
             ESP_ERROR_CHECK( get_setting("sleep_fade_time_min", &sleep_fade_time_min) );
+            sleep_step = sleep_fade_time_min * 60 / FADE_STEP_COUNT;
             ESP_LOGI(TAG, "Configuration complete, blanking LEDs");
             led_run_sync(led_pattern_blank);
             break;
@@ -235,13 +257,25 @@ void alarm_task_func(void* param)
             }
             break;
         case sleep_mode_start:
+            sleep_mode_start_time = now;
             sleep_mode_step_count = 0;
-            sleep_mode_loop_counter = 0;
             led_run_sync(led_pattern_fade_start);
             break;
-        case sleep_mode_run:
-            if (alarm_current_state == alarm_next_state)
+        case sleep_mode_delay:
+            if (alarm_current_state != alarm_next_state)
             {
+                sleep_mode_start_time = now;
+            }
+            break;
+        case sleep_mode_fade:
+            sleep_elapsed_time = now - sleep_mode_start_time;
+            if (// a fade step interval has passed
+                ((sleep_elapsed_time) > (sleep_step)) &&
+                // state exit conditions are not yet met
+                (alarm_current_state == alarm_next_state)
+                )
+            {
+                sleep_mode_start_time = now;
                 sleep_mode_step_count++;
                 led_run_sync(led_pattern_fade_step);
             }
