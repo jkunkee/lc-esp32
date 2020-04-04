@@ -123,13 +123,19 @@ void fill_brightness_gradient(uint8_t min, uint8_t max)
     }
 }
 
-void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int valueStartIdx)
+void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int valueStartIdx, int r, int g, int b)
 {
     led_strip_t* strip = strips[stripIdx];
     for (int bitIdx = 0; bitIdx < bitCount; bitIdx++)
     {
-        int val = ((1<<(valueStartIdx+bitIdx) & value) ? 100 : 0);
-        strip->set_pixel(strip, ledStartIdx+bitIdx, 0, val, 0);
+        if ((1<<(valueStartIdx+bitIdx)) & value)
+        {
+            strip->set_pixel(strip, ledStartIdx+bitIdx, r, g, b);
+        }
+        else
+        {
+            strip->set_pixel(strip, ledStartIdx+bitIdx, 0, 0, 0);
+		}
     }
     strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
 }
@@ -166,7 +172,7 @@ void led_refresh_status_indicators()
     time_t now;
     time(&now);
     // N.B. Will fail with 64-bit time_t
-    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0);
+    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, 0, 100, 0);
 }
 
 bool led_current_display_is_status = pdFALSE;
@@ -289,7 +295,7 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
-        show_integer(1, sizeof(now)*8, now, 0, 0);
+        show_integer(1, sizeof(now)*8, now, 0, 0, 0, 100, 0);
         break;
     case lpat_fade_start:
         fade_start();
