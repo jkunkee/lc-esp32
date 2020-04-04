@@ -168,6 +168,10 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
     // N.B. buf_len > max_signed_int is not handled
     // '- 5' is according to the function declaration comments
     cJSON_bool succeeded = cJSON_PrintPreallocated(root, buf, buf_len - 5, 1);
+    if (!succeeded)
+    {
+        ESP_LOGE(TAG, "Writing JSON string to buffer failed");
+    }
 
     return (succeeded != 0 ? ESP_OK : ESP_FAIL);
 }
