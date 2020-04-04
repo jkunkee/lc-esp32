@@ -247,7 +247,7 @@ void show_current_time()
     // Indicate bitness
     upperStrip->set_pixel(upperStrip, 3, 0, PX_SOFT, 0);
     upperStrip->set_pixel(upperStrip, 2, 0, PX_SOFT/2, 0);
-    upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/10, 0);
+    upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/6, 0);
     upperStrip->set_pixel(upperStrip, 0, 0, PX_OFF+1, 0);
 
     // TODO: Show BCD date in American format on lowerStrip
