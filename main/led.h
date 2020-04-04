@@ -74,8 +74,6 @@ typedef struct _led_color_t {
 void led_set_status_indicator(led_status_index idx, led_color_t color);
 
 // Configuration is a combination of hard-coded and sdkconfig.h items.
+
 esp_err_t led_init(void);
 esp_err_t led_run_sync(led_pattern_t p);
-
-extern EventGroupHandle_t s_led_event_group;
-#define LED_RUN_COMPLETE_BIT BIT0
