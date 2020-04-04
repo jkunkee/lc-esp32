@@ -241,6 +241,9 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_sudden_white:
         set_all_rgb(200, 200, 200);
         break;
+    case lpat_fill_black:
+        fill_all_rgb(150, 0, 0, 0);
+        break;
     case lpat_fill_white:
         fill_all_rgb(150, 100, 100, 100);
         break;
@@ -253,9 +256,6 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
         show_integer(1, sizeof(now)*8, now, 0, 0);
-        break;
-    case lpat_blank:
-        fill_all_rgb(150, 0, 0, 0);
         break;
     case lpat_fade_start:
         fade_start();

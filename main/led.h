@@ -14,11 +14,11 @@
 
 #define LED_PATTERN_NAME_TEMPLATE \
     TRANSMOG(lpat_sudden_white) \
+    TRANSMOG(lpat_fill_black) \
     TRANSMOG(lpat_fill_white) \
     TRANSMOG(lpat_brightness_gradient) \
     TRANSMOG(lpat_status_indicators) \
     TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \
-    TRANSMOG(lpat_blank) \
     TRANSMOG(lpat_fade_start) \
     TRANSMOG(lpat_fade_step) \
     TRANSMOG(lpat_max)
