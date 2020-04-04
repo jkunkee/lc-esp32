@@ -238,36 +238,36 @@ esp_err_t led_run_sync(led_pattern_t p)
 
     switch (p)
     {
-    case sudden_white:
+    case lpat_sudden_white:
         set_all_rgb(200, 200, 200);
         break;
-    case fill_white:
+    case lpat_fill_white:
         fill_all_rgb(150, 100, 100, 100);
         break;
-    case brightness_gradient:
+    case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
         break;
-    case status_indicators:
+    case lpat_status_indicators:
         led_refresh_status_indicators();
         break;
-    case local_time_in_unix_epoch_seconds:
+    case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
         show_integer(1, sizeof(now)*8, now, 0, 0);
         break;
-    case led_pattern_blank:
+    case lpat_blank:
         fill_all_rgb(150, 0, 0, 0);
         break;
-    case led_pattern_fade_start:
+    case lpat_fade_start:
         fade_start();
         break;
-    case led_pattern_fade_step:
+    case lpat_fade_step:
         fade_step();
         break;
     default:
         retVal = ESP_ERR_INVALID_ARG;
     }
 
-    led_current_display_is_status = (p == status_indicators);
+    led_current_display_is_status = (p == lpat_status_indicators);
 
     xSemaphoreGive(led_semaphore);
 

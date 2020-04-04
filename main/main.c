@@ -171,7 +171,7 @@ void app_main(void)
     ESP_ERROR_CHECK(led_init());
     ESP_LOGI(TAG, "Initializing the LED driver complete.");
     led_set_status_indicator(led_status_led, LED_STATUS_COLOR_SUCCESS);
-    led_run_sync(status_indicators);
+    led_run_sync(lpat_status_indicators);
 
     // Reflect the state of this function in the status LED set
     led_set_status_indicator(led_status_full_system, LED_STATUS_COLOR_AQUIRING);

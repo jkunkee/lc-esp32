@@ -13,15 +13,15 @@
 #include "freertos/event_groups.h"
 
 #define LED_PATTERN_NAME_TEMPLATE \
-    TRANSMOG(sudden_white) \
-    TRANSMOG(fill_white) \
-    TRANSMOG(brightness_gradient) \
-    TRANSMOG(status_indicators) \
-    TRANSMOG(local_time_in_unix_epoch_seconds) \
-    TRANSMOG(led_pattern_blank) \
-    TRANSMOG(led_pattern_fade_start) \
-    TRANSMOG(led_pattern_fade_step) \
-    TRANSMOG(led_pattern_max)
+    TRANSMOG(lpat_sudden_white) \
+    TRANSMOG(lpat_fill_white) \
+    TRANSMOG(lpat_brightness_gradient) \
+    TRANSMOG(lpat_status_indicators) \
+    TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \
+    TRANSMOG(lpat_blank) \
+    TRANSMOG(lpat_fade_start) \
+    TRANSMOG(lpat_fade_step) \
+    TRANSMOG(lpat_max)
 
 #define TRANSMOG(n) n,
 typedef enum _led_pattern

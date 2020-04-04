@@ -55,7 +55,7 @@ void alarm_task_func(void* param)
     uint32_t alarm_snooze_interval_min = 0;
     time_t snooze_start_time = 0;
     uint32_t alarm_led_pattern_raw = 0;
-    led_pattern_t alarm_pattern = fill_white;
+    led_pattern_t alarm_pattern = lpat_fill_white;
     // sleep values
     time_t sleep_mode_start_time = 0;
     uint32_t sleep_delay_min = 0;
@@ -235,7 +235,7 @@ void alarm_task_func(void* param)
             ESP_ERROR_CHECK( get_setting("sleep_fade_time_min", &sleep_fade_time_min) );
             sleep_step = sleep_fade_time_min * 60 / FADE_STEP_COUNT;
             ESP_LOGI(TAG, "Configuration complete, blanking LEDs");
-            led_run_sync(led_pattern_blank);
+            led_run_sync(lpat_blank);
             break;
         case waiting:
             // When control comes back, we'll compare then and now to see if the alarm should fire.
@@ -249,18 +249,18 @@ void alarm_task_func(void* param)
             if (bits & ALARM_SNOOZE_BIT)
             {
                 snooze_start_time = now;
-                led_run_sync(led_pattern_blank);
+                led_run_sync(lpat_blank);
             }
             else
             {
-                led_run_sync(led_pattern_blank);
+                led_run_sync(lpat_blank);
                 led_run_sync(alarm_pattern);
             }
             break;
         case sleep_mode_start:
             sleep_mode_start_time = now;
             sleep_mode_step_count = 0;
-            led_run_sync(led_pattern_fade_start);
+            led_run_sync(lpat_fade_start);
             break;
         case sleep_mode_delay:
             if (alarm_current_state != alarm_next_state)
@@ -278,7 +278,7 @@ void alarm_task_func(void* param)
             {
                 sleep_mode_start_time = now;
                 sleep_mode_step_count++;
-                led_run_sync(led_pattern_fade_step);
+                led_run_sync(lpat_fade_step);
             }
             break;
         default:

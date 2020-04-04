@@ -47,7 +47,7 @@ setting_definition settings[] = {
         50, 51, 52, 53, 54, 55, 56, 57, 58, 59
     })),
     DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
-    DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({})),
+    DEFINE_SETTING(alarm_led_pattern, lpat_fill_white, RANGE_ARRAY({})),
     DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
 
     DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 20, 30, 45, 60})),
@@ -134,7 +134,7 @@ esp_err_t set_setting(char* name, uint32_t value)
     {
         is_value_valid = pdFALSE;
         // value is unsigned and the enum starts at 0, so only the upper bound needs checking
-        if (value < led_pattern_max)
+        if (value < lpat_max)
         {
             is_value_valid = pdTRUE;
         }
@@ -162,7 +162,7 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
     }
 
     cJSON_DeleteItemFromObject(range_object, "alarm_led_pattern");
-    cJSON* alarm_pattern_range_array = cJSON_CreateStringArray(&led_pattern_names[0], led_pattern_max);
+    cJSON* alarm_pattern_range_array = cJSON_CreateStringArray(&led_pattern_names[0], lpat_max);
     cJSON_AddItemToObject(range_object, "alarm_led_pattern", alarm_pattern_range_array);
 
     // N.B. buf_len > max_signed_int is not handled
