@@ -160,8 +160,8 @@ uint32_t int_to_bcd(uint32_t val)
 }
 
 // Pixel fraction definitions
-#define PX_OFF  0
-#define PX_SOFT 50
+#define PX_OFF  1
+#define PX_SOFT 40
 #define PX_HARD 100
 // full pixel definitions
 #define PXS_UNUSED      PX_OFF,  PX_OFF,  PX_OFF
