@@ -24,6 +24,8 @@
     TRANSMOG(lpat_fill_black) \
     TRANSMOG(lpat_fill_white) \
     TRANSMOG(lpat_fill_whyamionfirewhite) \
+    TRANSMOG(lpat_fill_auiiieeyellow) \
+    TRANSMOG(lpat_fill_whosebloodisthisred) \
     TRANSMOG(lpat_brightness_gradient) \
     TRANSMOG(lpat_status_indicators) \
     TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \

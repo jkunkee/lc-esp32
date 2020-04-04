@@ -238,6 +238,7 @@ esp_err_t led_run_sync(led_pattern_t p)
 
     switch (p)
     {
+    // instant color patterns
     case lpat_sudden_red:
         set_all_rgb(75, 0, 0);
         break;
@@ -262,16 +263,24 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_sudden_white:
         set_all_rgb(75, 75, 75);
         break;
+    // gradual fill patterns
     case lpat_fill_black:
         fill_all_rgb(150, 0, 0, 0);
         break;
     case lpat_fill_white:
         fill_all_rgb(150, 75, 75, 75);
         break;
+    // https://www.schlockmercenary.com/2014-12-08
     case lpat_fill_whyamionfirewhite:
-        // https://www.schlockmercenary.com/2014-12-08
         fill_all_rgb(150, 255, 255, 255);
         break;
+    case lpat_fill_auiiieeyellow:
+        fill_all_rgb(150, 255, 255, 0);
+        break;
+    case lpat_fill_whosebloodisthisred:
+        fill_all_rgb(150, 255, 0, 0);
+        break;
+    // technical patterns
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
         break;
