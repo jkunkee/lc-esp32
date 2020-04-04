@@ -25,6 +25,42 @@
     (LED_STRIP_ACTION_MAX_TIME_MIN_MS > LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS ? \
      LED_STRIP_ACTION_MAX_TIME_MIN_MS : LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS)
 
+// color definitions
+// pixel fraction definitions
+#define PX_OFF  0
+#define PX_NOFF 1
+#define PX_SOFT 40
+#define PX_HARD 100
+// templates for common colors
+#define PXS_RED(intensity)       intensity, PX_OFF, PX_OFF
+#define PXS_GREEN(intensity)     PX_OFF, intensity, PX_OFF
+#define PXS_BLUE(intensity)      PX_OFF, PX_OFF, intensity
+#define PXS_CYAN(intensity)      PX_OFF, intensity, intensity
+#define PXS_MAGENTA(intensity)   intensity, PX_OFF, intensity
+#define PXS_YELLOW(intensity)    intensity, intensity, PX_OFF
+#define PXS_GREYSCALE(intensity) intensity, intensity, intensity
+// colors based on templates
+#define PXS_ON PXS_GREYSCALE(PX_HARD)
+#define PXS_NOFF PXS_GREYSCALE(PX_NOFF)
+#define PXS_OFF PXS_GREYSCALE(PX_OFF)
+// full pixel definitions
+#define PXS_UNUSED      PXS_NOFF
+#define PXS_UNDERSCORE  PXS_YELLOW(PX_SOFT)
+#define PXS_DASH        PXS_BLUE(PX_SOFT)
+#define PXS_COLON       PX_NOFF, PX_SOFT, PX_SOFT
+#define PXS_SLASH       PX_SOFT, PX_NOFF, PX_SOFT
+#define PXS_TIME_BIT    PX_NOFF, PX_HARD, PX_NOFF
+#define PXS_DATE_BIT    PX_HARD, PX_NOFF, PX_NOFF
+// status colors
+const led_color_t LED_STATUS_COLOR_OFF      = {.r = 0, .g = 0, .b = 0};
+const led_color_t LED_STATUS_COLOR_ON       = {.r = 100, .g = 100, .b = 100};
+const led_color_t LED_STATUS_COLOR_BUSY     = {.r = 100, .g = 100, .b = 0};
+const led_color_t LED_STATUS_COLOR_AQUIRING = {.r = 0, .g = 0, .b = 100};
+const led_color_t LED_STATUS_COLOR_ERROR    = {.r = 100, .g = 0, .b = 0};
+const led_color_t LED_STATUS_COLOR_SUCCESS  = {.r = 0, .g = 100, .b = 0};
+#define SPLAT_LED_COLOR_T(color_t) color_t.r, color_t.g, color_t.b
+#define CONDENSE_LED_COLOR_T(pr, pg, pb) ((const led_color_t){.r = pr, .g = pg, .b = pb})
+
 void led_reset_status_indicators();
 
 SemaphoreHandle_t led_semaphore;
@@ -132,6 +168,39 @@ void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t
     }
 }
 
+void color_showcase()
+{
+    led_strip_t* strip = strips[0];
+    const int LEDS_PER_SET = 6;
+    const int MAX_INTENSITY = 60;
+    const int SETS = LEDS_PER_STRIP / LEDS_PER_SET;
+    const int STEP_SIZE = MAX_INTENSITY / SETS;
+
+    for (int set = 0; set < SETS; set++)
+    {
+        int ledIdx = set * LEDS_PER_SET;
+        strip->set_pixel(strip, ledIdx++, PXS_RED(STEP_SIZE * set + 1));
+        strip->set_pixel(strip, ledIdx++, PXS_GREEN(STEP_SIZE * set + 1));
+        strip->set_pixel(strip, ledIdx++, PXS_BLUE(STEP_SIZE * set + 1));
+        strip->set_pixel(strip, ledIdx++, PXS_CYAN(STEP_SIZE * set + 1));
+        strip->set_pixel(strip, ledIdx++, PXS_MAGENTA(STEP_SIZE * set + 1));
+        strip->set_pixel(strip, ledIdx++, PXS_YELLOW(STEP_SIZE * set + 1));
+	}
+    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+
+    const int HUE_CHUNK_SIZE = 359 / LEDS_PER_STRIP;
+    strip = strips[1];
+    for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
+    {
+        uint32_t r, g, b;
+
+        led_strip_hsv2rgb(HUE_CHUNK_SIZE * pixelIdx, 100, 10, &r, &g, &b);
+
+        strip->set_pixel(strip, pixelIdx, r, g, b);
+	}
+    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+}
+
 void set_all_rgb(int r, int g, int b)
 {
     ESP_LOGI(TAG, "Running pattern %s r=%d g=%d b=%d", __FUNCTION__, r, g, b);
@@ -215,19 +284,6 @@ uint32_t int_to_bcd(uint32_t val)
     return result;
 }
 
-// Pixel fraction definitions
-#define PX_OFF  1
-#define PX_SOFT 40
-#define PX_HARD 100
-// full pixel definitions
-#define PXS_UNUSED      PX_OFF,  PX_OFF,  PX_OFF
-#define PXS_UNDERSCORE  PX_SOFT, PX_SOFT, PX_OFF
-#define PXS_DASH        PX_OFF,  PX_OFF,  PX_SOFT
-#define PXS_COLON       PX_OFF,  PX_SOFT, PX_SOFT
-#define PXS_SLASH       PX_SOFT, PX_OFF,  PX_SOFT
-#define PXS_TIME_BIT    PX_OFF,  PX_HARD, PX_OFF
-#define PXS_DATE_BIT    PX_HARD, PX_OFF,  PX_OFF
-
 void show_current_time()
 {
 #if LED_STRIP_COUNT >= 2 && LEDS_PER_STRIP >= 60
@@ -304,7 +360,7 @@ void show_current_time()
     upperStrip->set_pixel(upperStrip, 3, 0, PX_SOFT, 0);
     upperStrip->set_pixel(upperStrip, 2, 0, PX_SOFT/2, 0);
     upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/6, 0);
-    upperStrip->set_pixel(upperStrip, 0, 0, PX_OFF+1, 0);
+    upperStrip->set_pixel(upperStrip, 0, 0, PX_NOFF, 0);
 
     // Show BCD date in American format on lowerStrip
 
@@ -524,6 +580,9 @@ esp_err_t led_run_sync(led_pattern_t p)
         show_current_time();
         break;
     // technical patterns
+    case lpat_color_showcase:
+        color_showcase();
+        break;
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
         break;

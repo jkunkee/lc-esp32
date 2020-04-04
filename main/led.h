@@ -27,6 +27,7 @@
     TRANSMOG(lpat_fill_auiiieeyellow) \
     TRANSMOG(lpat_fill_whosebloodisthisred) \
     TRANSMOG(lpat_current_time) \
+    TRANSMOG(lpat_color_showcase) \
     TRANSMOG(lpat_brightness_gradient) \
     TRANSMOG(lpat_status_indicators) \
     TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \
@@ -64,12 +65,12 @@ typedef struct _led_color_t {
     unsigned char b;
 } led_color_t;
 
-#define LED_STATUS_COLOR_OFF ((led_color_t){.r = 0, .g = 0, .b = 0})
-#define LED_STATUS_COLOR_ON ((led_color_t){.r = 100, .g = 100, .b = 100})
-#define LED_STATUS_COLOR_BUSY ((led_color_t){.r = 100, .g = 100, .b = 0})
-#define LED_STATUS_COLOR_AQUIRING ((led_color_t){.r = 0, .g = 0, .b = 100})
-#define LED_STATUS_COLOR_ERROR ((led_color_t){.r = 100, .g = 0, .b = 0})
-#define LED_STATUS_COLOR_SUCCESS ((led_color_t){.r = 0, .g = 100, .b = 0})
+const extern led_color_t LED_STATUS_COLOR_OFF;
+const extern led_color_t LED_STATUS_COLOR_ON;
+const extern led_color_t LED_STATUS_COLOR_BUSY;
+const extern led_color_t LED_STATUS_COLOR_AQUIRING;
+const extern led_color_t LED_STATUS_COLOR_ERROR;
+const extern led_color_t LED_STATUS_COLOR_SUCCESS;
 
 void led_set_status_indicator(led_status_index idx, led_color_t color);
 
