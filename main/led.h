@@ -13,9 +13,17 @@
 #include "freertos/event_groups.h"
 
 #define LED_PATTERN_NAME_TEMPLATE \
+    TRANSMOG(lpat_sudden_red) \
+    TRANSMOG(lpat_sudden_green) \
+    TRANSMOG(lpat_sudden_blue) \
+    TRANSMOG(lpat_sudden_cyan) \
+    TRANSMOG(lpat_sudden_magenta) \
+    TRANSMOG(lpat_sudden_yellow) \
+    TRANSMOG(lpat_sudden_black) \
     TRANSMOG(lpat_sudden_white) \
     TRANSMOG(lpat_fill_black) \
     TRANSMOG(lpat_fill_white) \
+    TRANSMOG(lpat_fill_whyamionfirewhite) \
     TRANSMOG(lpat_brightness_gradient) \
     TRANSMOG(lpat_status_indicators) \
     TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \

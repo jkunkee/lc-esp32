@@ -238,14 +238,39 @@ esp_err_t led_run_sync(led_pattern_t p)
 
     switch (p)
     {
+    case lpat_sudden_red:
+        set_all_rgb(75, 0, 0);
+        break;
+    case lpat_sudden_green:
+        set_all_rgb(0, 75, 0);
+        break;
+    case lpat_sudden_blue:
+        set_all_rgb(0, 0, 75);
+        break;
+    case lpat_sudden_cyan:
+        set_all_rgb(0, 75, 75);
+        break;
+    case lpat_sudden_magenta:
+        set_all_rgb(75, 0, 75);
+        break;
+    case lpat_sudden_yellow:
+        set_all_rgb(75, 75, 0);
+        break;
+    case lpat_sudden_black:
+        set_all_rgb(0, 0, 0);
+        break;
     case lpat_sudden_white:
-        set_all_rgb(200, 200, 200);
+        set_all_rgb(75, 75, 75);
         break;
     case lpat_fill_black:
         fill_all_rgb(150, 0, 0, 0);
         break;
     case lpat_fill_white:
-        fill_all_rgb(150, 100, 100, 100);
+        fill_all_rgb(150, 75, 75, 75);
+        break;
+    case lpat_fill_whyamionfirewhite:
+        // https://www.schlockmercenary.com/2014-12-08
+        fill_all_rgb(150, 255, 255, 255);
         break;
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
