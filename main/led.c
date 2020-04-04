@@ -140,6 +140,127 @@ void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int va
     strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
 }
 
+uint32_t int_to_bcd(uint32_t val)
+{
+    if (val > 99999999)
+    {
+        ESP_LOGE(TAG, "int value %d exceeds BCD max of 99999999", val);
+        return -1;
+	}
+    // Inspired by https://stackoverflow.com/questions/1408361/unsigned-integer-to-bcd-conversion
+    uint32_t result = 0;
+    result += val % 10;
+    result += ((val / 10) % 10) << 4;
+    result += ((val / 100) % 10) << 8;
+    result += ((val / 1000) % 10) << 12;
+    result += ((val / 10000) % 10) << 16;
+    result += ((val / 100000) % 10) << 20;
+    result += ((val / 1000000) % 10) << 24;
+    result += ((val / 10000000) % 10) << 28;
+    return result;
+}
+
+// Pixel fraction definitions
+#define PX_OFF  0
+#define PX_SOFT 50
+#define PX_HARD 100
+// full pixel definitions
+#define PXS_UNUSED      PX_OFF,  PX_OFF,  PX_OFF
+#define PXS_UNDERSCORE  PX_SOFT, PX_SOFT, PX_OFF
+#define PXS_DASH        PX_OFF,  PX_OFF,  PX_SOFT
+#define PXS_COLON       PX_OFF,  PX_SOFT, PX_SOFT
+#define PXS_SLASH       PX_SOFT, PX_OFF,  PX_SOFT
+#define PXS_TIME_BIT    PX_OFF,  PX_HARD, PX_OFF
+#define PXS_DATE_BIT    PX_HARD, PX_OFF,  PX_OFF
+
+void show_current_time()
+{
+#if LED_STRIP_COUNT >= 2 && LEDS_PER_STRIP >= 60
+    led_strip_t* upperStrip = strips[0];
+    led_strip_t* lowerStrip = strips[1];
+    // Clear the strips
+    for (int ledIdx = 0; ledIdx < LEDS_PER_STRIP; ledIdx++)
+    {
+        upperStrip->set_pixel(upperStrip, ledIdx, PXS_UNUSED);
+        lowerStrip->set_pixel(lowerStrip, ledIdx, PXS_UNUSED);
+	}
+    // Get the time
+    time_t now;
+    time(&now);
+    // Translate it into a struct
+    struct tm local_now;
+    localtime_r(&now, &local_now);
+    ESP_LOGI(TAG, "Time from tm struct: %02d:%02d:%02d %02d/%02d/%04d",
+        local_now.tm_hour, local_now.tm_min, local_now.tm_sec,
+        local_now.tm_mon, local_now.tm_mday, local_now.tm_year + 1900);
+    // LEDS_PER_STRIP is currently 60.
+    // 59                                                         0
+    // ------------------------------------------------------------
+    // __hh-hhhh::mmm-mmmm::sss-ssss_--------------------------4321
+    // ____m-mmmm//dd-dddd//yyyy-yyyy-yyyy-yyyy__dow_--------------
+    // one line?
+    // hh-hhhh:mmm-mmmm:sss-ssss___m-mmmm/dd-dddd/yy-yyyy-yyyy-yyyy
+    // European style
+    // Long now
+    // ____m-mmmm//dd-dddd//yyyy-yyyy-yyyy-yyyy-yyyy__dow_---------
+    // raw
+    // _hhhh:mmmmmm:ssssss__yyyyyyyyyyyy/mmmm/ddddd_dow------------
+    //
+    // delimiters: double or single of a color
+    // data bits: another color
+
+    int currentIdx = LEDS_PER_STRIP - 1;
+
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_UNDERSCORE);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_UNDERSCORE);
+
+    // Show BCD time on upperStrip
+    int hour_bcd = int_to_bcd(local_now.tm_hour);
+    currentIdx -= 2;
+    show_integer(0, 2, hour_bcd, currentIdx+1, 4, PXS_TIME_BIT);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(0, 4, hour_bcd, currentIdx+1, 0, PXS_TIME_BIT);
+
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_COLON);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_COLON);
+
+    int min_bcd = int_to_bcd(local_now.tm_min);
+    currentIdx -= 3;
+    show_integer(0, 3, min_bcd, currentIdx+1, 4, PXS_TIME_BIT);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(0, 4, min_bcd, currentIdx+1, 0, PXS_TIME_BIT);
+
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_COLON);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_COLON);
+
+    int sec_bcd = int_to_bcd(local_now.tm_sec);
+    currentIdx -= 3;
+    show_integer(0, 3, sec_bcd, currentIdx+1, 4, PXS_TIME_BIT);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(0, 4, sec_bcd, currentIdx+1, 0, PXS_TIME_BIT);
+
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_UNDERSCORE);
+    upperStrip->set_pixel(upperStrip, currentIdx--, PXS_UNDERSCORE);
+
+    // Indicate bitness
+    upperStrip->set_pixel(upperStrip, 3, 0, PX_SOFT, 0);
+    upperStrip->set_pixel(upperStrip, 2, 0, PX_SOFT/2, 0);
+    upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/10, 0);
+    upperStrip->set_pixel(upperStrip, 0, 0, PX_OFF+1, 0);
+
+    // TODO: Show BCD date in American format on lowerStrip
+
+    // Flush pattern to strips
+
+    upperStrip->refresh(upperStrip, LED_STRIP_ACTION_TIMEOUT_MS);
+    lowerStrip->refresh(lowerStrip, LED_STRIP_ACTION_TIMEOUT_MS);
+
+#endif // LED_STRIP_COUNT and LEDS_PER_STRIP
+}
+
 // Add an extra for displaying the end of the string on the light strip
 #define LED_STATUS_ARRAY_SIZE (led_status_MAX+1)
 led_color_t status_bits[LED_STATUS_ARRAY_SIZE];
@@ -285,6 +406,10 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_fill_whosebloodisthisred:
         fill_all_rgb(150, 255, 0, 0);
+        break;
+    // data patterns
+    case lpat_current_time:
+        show_current_time();
         break;
     // technical patterns
     case lpat_brightness_gradient:
