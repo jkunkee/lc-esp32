@@ -242,13 +242,14 @@ void alarm_task_func(void* param)
             prev_now = now;
             break;
         case snoozing:
-            led_run_sync(led_pattern_blank);
+            prev_now = now;
             break;
         case running:
-            time(&now);
+            prev_now = now;
             if (bits & ALARM_SNOOZE_BIT)
             {
                 snooze_start_time = now;
+                led_run_sync(led_pattern_blank);
             }
             else
             {
