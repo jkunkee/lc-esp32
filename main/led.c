@@ -137,7 +137,6 @@ void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int va
             strip->set_pixel(strip, ledStartIdx+bitIdx, 0, 0, 0);
 		}
     }
-    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
 }
 
 uint32_t int_to_bcd(uint32_t val)
@@ -294,6 +293,7 @@ void led_refresh_status_indicators()
     time(&now);
     // N.B. Will fail with 64-bit time_t
     show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, 0, 100, 0);
+    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
 }
 
 bool led_current_display_is_status = pdFALSE;
@@ -421,6 +421,7 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
         show_integer(1, sizeof(now)*8, now, 0, 0, 0, 100, 0);
+        strips[1]->refresh(strips[1], LED_STRIP_ACTION_TIMEOUT_MS);
         break;
     case lpat_fade_start:
         fade_start();
