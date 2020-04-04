@@ -250,7 +250,63 @@ void show_current_time()
     upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/6, 0);
     upperStrip->set_pixel(upperStrip, 0, 0, PX_OFF+1, 0);
 
-    // TODO: Show BCD date in American format on lowerStrip
+    // Show BCD date in American format on lowerStrip
+
+    currentIdx = LEDS_PER_STRIP - 1;
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+
+    // tm_mon is months since January, humans use one-indexed value
+    int month_bcd = int_to_bcd(local_now.tm_mon + 1);
+    currentIdx -= 1;
+    show_integer(1, 1, month_bcd, currentIdx+1, 4, PXS_DATE_BIT);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(1, 4, month_bcd, currentIdx+1, 0, PXS_DATE_BIT);
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_SLASH);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_SLASH);
+
+    // tm_mday is one-indexed
+    int day_bcd = int_to_bcd(local_now.tm_mday);
+    currentIdx -= 2;
+    show_integer(1, 2, day_bcd, currentIdx+1, 4, PXS_DATE_BIT);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(1, 4, day_bcd, currentIdx+1, 0, PXS_DATE_BIT);
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_SLASH);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_SLASH);
+
+    // tm_year is years since 1900
+    int year_bcd = int_to_bcd(local_now.tm_year + 1900);
+    currentIdx -= 2;
+    show_integer(1, 2, year_bcd, currentIdx+1, 12, PXS_DATE_BIT);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(1, 4, year_bcd, currentIdx+1, 8, PXS_DATE_BIT);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(1, 4, year_bcd, currentIdx+1, 4, PXS_DATE_BIT);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_DASH);
+    currentIdx -= 4;
+    show_integer(1, 4, year_bcd, currentIdx+1, 0, PXS_DATE_BIT);
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+
+    currentIdx -= 1;
+    show_integer(1, 1, local_now.tm_isdst, currentIdx+1, 0, PXS_DATE_BIT);
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+
+    // tm_wday is zero-indexed
+    currentIdx -= 3;
+    show_integer(1, 3, local_now.tm_wday+1, currentIdx+1, 0, PXS_DATE_BIT);
+
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
+    lowerStrip->set_pixel(lowerStrip, currentIdx--, PXS_UNDERSCORE);
 
     // Flush pattern to strips
 
