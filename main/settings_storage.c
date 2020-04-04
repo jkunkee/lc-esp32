@@ -38,7 +38,14 @@ typedef struct _setting_definition
 
 setting_definition settings[] = {
     DEFINE_SETTING(alarm_hour, 7, RANGE_ARRAY({0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23})),
-    DEFINE_SETTING(alarm_minute, 30, RANGE_ARRAY({0, 15, 30, 45})),
+    DEFINE_SETTING(alarm_minute, 30, RANGE_ARRAY({
+         0,  1,  2,  3,  4,  5,  6,  7,  8,  9,
+        10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
+        20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+        30, 31, 32, 33, 34, 35, 36, 37, 38, 39,
+        40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+        50, 51, 52, 53, 54, 55, 56, 57, 58, 59
+    })),
     DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
     DEFINE_SETTING(alarm_led_pattern, fill_white, RANGE_ARRAY({})),
     DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
