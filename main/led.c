@@ -488,6 +488,7 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
 
 // TODO: Consider fading in/out based on bool setting
 // TODO: Consider fading from A to B based on a new color enum setting
+// TODO: Consider using HSV so colors stay balanced as they fade
 
 #define FADE_START_COLOR ((led_color_t){ .r = 150, .g = 100, .b = 80 })
 static led_color_t fade_current_color = FADE_START_COLOR;
@@ -503,37 +504,44 @@ void fade_start()
     fade_step_interval.g = FADE_START_COLOR.g / FADE_STEP_COUNT;
     fade_step_interval.b = FADE_START_COLOR.b / FADE_STEP_COUNT;
     // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
-    if ((FADE_START_COLOR.r % FADE_STEP_COUNT) != 0)
+    if ((FADE_START_COLOR.r % FADE_STEP_COUNT) > fade_step_interval.r)
     {
         fade_step_interval.r += 1;
 	}
-    if ((FADE_START_COLOR.g % FADE_STEP_COUNT) != 0)
+    if ((FADE_START_COLOR.g % FADE_STEP_COUNT) > fade_step_interval.g)
     {
         fade_step_interval.g += 1;
 	}
-    if ((FADE_START_COLOR.b % FADE_STEP_COUNT) != 0)
+    if ((FADE_START_COLOR.b % FADE_STEP_COUNT) > fade_step_interval.b)
     {
         fade_step_interval.b += 1;
 	}
 }
 
-// TODO: bottom out at zero on each color instead of on the first color to reach 0
-
 void fade_step()
 {
-    if (fade_current_color.r >= fade_step_interval.r &&
-        fade_current_color.g >= fade_step_interval.g &&
-        fade_current_color.b >= fade_step_interval.b
-        )
+    if (fade_current_color.r >= fade_step_interval.r)
     {
         fade_current_color.r -= fade_step_interval.r;
-        fade_current_color.g -= fade_step_interval.g;
-        fade_current_color.b -= fade_step_interval.b;
     }
     else
     {
         fade_current_color.r = 0;
+    }
+    if (fade_current_color.g >= fade_step_interval.g)
+    {
+        fade_current_color.g -= fade_step_interval.g;
+    }
+    else
+    {
         fade_current_color.g = 0;
+    }
+    if (fade_current_color.b >= fade_step_interval.b)
+    {
+        fade_current_color.b -= fade_step_interval.b;
+    }
+    else
+    {
         fade_current_color.b = 0;
     }
     fill_all_rgb(FADE_PX_DELAY_MS, fade_current_color.r, fade_current_color.g, fade_current_color.b);
