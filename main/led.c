@@ -104,7 +104,6 @@ esp_err_t led_init(void)
         strips[stripIdx] = strip;
         // Clear LED strip (turn off all LEDs)
         ESP_ERROR_CHECK(strip->clear(strip, LED_STRIP_ACTION_TIMEOUT_MS));
-        ESP_ERROR_CHECK(strip->set_pixel(strip, 10, 0, 100, 0));
         // Flush RGB values to LEDs
         ESP_ERROR_CHECK(strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS));
     }
