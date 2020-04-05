@@ -502,11 +502,14 @@ void fade_start()
     fade_step_interval.r = FADE_START_COLOR.r / FADE_STEP_COUNT;
     fade_step_interval.g = FADE_START_COLOR.g / FADE_STEP_COUNT;
     fade_step_interval.b = FADE_START_COLOR.b / FADE_STEP_COUNT;
-    // aggressively round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
+    // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
+    // TODO: don't round up when remainder is zero
     fade_step_interval.r += 1;
     fade_step_interval.g += 1;
     fade_step_interval.b += 1;
 }
+
+// TODO: bottom out at zero on each color instead of on the first color to reach 0
 
 void fade_step()
 {
