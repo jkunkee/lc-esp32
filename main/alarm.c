@@ -173,6 +173,7 @@ void alarm_task_func(void* param)
                 alarm_next_state = snoozing;
             }
             break;
+        // TODO: Consider using fade-to-on (gentle) as alarm instead of cycling patterns (annoying)
         case sleep_mode_start:
             alarm_next_state = sleep_mode_delay;
             break;

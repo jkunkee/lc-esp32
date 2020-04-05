@@ -61,6 +61,8 @@ const led_color_t LED_STATUS_COLOR_SUCCESS  = {.r = 0, .g = 100, .b = 0};
 #define SPLAT_LED_COLOR_T(color_t) color_t.r, color_t.g, color_t.b
 #define CONDENSE_LED_COLOR_T(pr, pg, pb) ((const led_color_t){.r = pr, .g = pg, .b = pb})
 
+// TODO: Consider pattern-verb command structure instead of unified IDs
+
 void led_reset_status_indicators();
 
 SemaphoreHandle_t led_semaphore;
@@ -484,6 +486,9 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
     }
     xSemaphoreGive(led_semaphore);
 }
+
+// TODO: Consider fading in/out based on bool setting
+// TODO: Consider fading from A to B based on a new color enum setting
 
 #define FADE_START_COLOR ((led_color_t){ .r = 150, .g = 100, .b = 80 })
 static led_color_t fade_current_color = FADE_START_COLOR;
