@@ -50,8 +50,10 @@ setting_definition settings[] = {
     DEFINE_SETTING(alarm_led_pattern, lpat_fill_white, RANGE_ARRAY({})),
     DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
 
-    DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({0, 1, 3, 5, 8, 10, 15, 20, 30, 45, 60})),
-    DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30})),
+    DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({
+        0, 1, 5, 10, 15, 30, 45,
+        60, 2*60, 3*60, 4*60, 5*60, 6*60, 7*60, 8*60, 9*60, 10*60})),
+    DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30, 45})),
 };
 int settings_len = LWIP_ARRAYSIZE(settings);
 
