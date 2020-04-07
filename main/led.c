@@ -233,6 +233,7 @@ void fill_all_rgb(int per_pixel_delay_ms, int r, int g, int b)
     ESP_LOGI(TAG, "Running pattern %s complete.", __FUNCTION__);
 }
 
+// TODO: HSV variant
 void fill_brightness_gradient(uint8_t min, uint8_t max)
 {
     uint8_t step_size = (max - min) / LEDS_PER_STRIP;
@@ -243,7 +244,7 @@ void fill_brightness_gradient(uint8_t min, uint8_t max)
         for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
         {
             char brightness = pixelIdx * step_size;
-            strip->set_pixel(strip, pixelIdx, brightness, brightness, brightness);
+            strip->set_pixel(strip, pixelIdx, PXS_GREYSCALE(brightness));
         }
         strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
     }
@@ -260,7 +261,7 @@ void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int va
         }
         else
         {
-            strip->set_pixel(strip, ledStartIdx+bitIdx, 0, 0, 0);
+            strip->set_pixel(strip, ledStartIdx+bitIdx, PXS_NOFF);
 		}
     }
 }
@@ -449,11 +450,11 @@ void led_refresh_status_indicators()
     {
         if (pixelIdx <= LED_STATUS_ARRAY_SIZE)
         {
-            strip->set_pixel(strip, pixelIdx, status_bits[pixelIdx].r, status_bits[pixelIdx].g, status_bits[pixelIdx].b);
+            strip->set_pixel(strip, pixelIdx, SPLAT_LED_COLOR_T(status_bits[pixelIdx]));
         }
         else
         {
-            strip->set_pixel(strip, pixelIdx, LED_STATUS_COLOR_OFF.r, LED_STATUS_COLOR_OFF.g, LED_STATUS_COLOR_OFF.b);
+            strip->set_pixel(strip, pixelIdx, SPLAT_LED_COLOR_T(LED_STATUS_COLOR_OFF));
         }
     }
     strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
@@ -461,7 +462,7 @@ void led_refresh_status_indicators()
     time_t now;
     time(&now);
     // N.B. Will fail with 64-bit time_t
-    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, 0, 100, 0);
+    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, PXS_GREEN(PX_HARD));
     strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
 }
 
@@ -490,7 +491,7 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
 // TODO: Consider fading from A to B based on a new color enum setting
 // TODO: Consider using HSV so colors stay balanced as they fade
 
-#define FADE_START_COLOR ((led_color_t){ .r = 150, .g = 100, .b = 80 })
+#define FADE_START_COLOR CONDENSE_LED_COLOR_T(150, 100, 80)
 static led_color_t fade_current_color = FADE_START_COLOR;
 static led_color_t fade_step_interval = { 0 };
 const int FADE_STEP_COUNT = 40;
@@ -499,7 +500,7 @@ const int FADE_STEP_COUNT = 40;
 void fade_start()
 {
     fade_current_color = FADE_START_COLOR;
-    fill_all_rgb(FADE_PX_DELAY_MS, fade_current_color.r, fade_current_color.g, fade_current_color.b);
+    fill_all_rgb(FADE_PX_DELAY_MS, SPLAT_LED_COLOR_T(fade_current_color));
     fade_step_interval.r = FADE_START_COLOR.r / FADE_STEP_COUNT;
     fade_step_interval.g = FADE_START_COLOR.g / FADE_STEP_COUNT;
     fade_step_interval.b = FADE_START_COLOR.b / FADE_STEP_COUNT;
@@ -544,7 +545,7 @@ void fade_step()
     {
         fade_current_color.b = 0;
     }
-    fill_all_rgb(FADE_PX_DELAY_MS, fade_current_color.r, fade_current_color.g, fade_current_color.b);
+    fill_all_rgb(FADE_PX_DELAY_MS, SPLAT_LED_COLOR_T(fade_current_color));
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
