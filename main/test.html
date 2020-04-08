@@ -1,5 +1,5 @@
 <html><head>
-<title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>
+<title>CONFIG_LC_MDNS_INSTANCE Control Panel</title>
 <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
 </head>
 <body bgcolor="0x111111" style="color: #BBBBEE;">
@@ -24,6 +24,7 @@
 <script>
 (async function() {
 'use strict';
+// TEST SCAFFOLDING
 //var settings_response = await fetch('/settings');
 //var settings = await settings_response.json();
 var settings = JSON.parse("{\"ranges\":{\"alarm_hour\":[1,2,3,4,5,6,7,8,9,10,11,12],\"alarm_minute\":[0,15,30,45],\"alarm_enabled\":[0,1],\"alarm_led_pattern\":[\"foo\", \"bar\"],\"alarm_snooze_interval_min\":[1,3,5,7,9,11,13,15],\"sleep_delay_min\":[1,3,5,8,10,15,20,30,45,60],\"sleep_fade_time_min\":[1,3,5,8,10,15,30]},\"alarm_hour\":7,\"alarm_minute\":30,\"alarm_enabled\":1,\"alarm_led_pattern\":1,\"alarm_snooze_interval_min\":9,\"sleep_delay_min\":30,\"sleep_fade_time_min\":15}");
@@ -57,6 +58,7 @@ document.getElementById('save').onclick = async function post_settings() {
         // Special-case the string-based field alarm_led_pattern
         if (setting_name === 'alarm_led_pattern') { new_settings[setting_name] = elem.selectedIndex; }
     });
+    // TEST SCAFFOLDING
     console.log(JSON.stringify(new_settings));
     //await fetch('/settings', {
     //    method: 'POST',
@@ -64,6 +66,7 @@ document.getElementById('save').onclick = async function post_settings() {
     //    headers: { 'Content-Type': 'application/json' },
     //});
 }
+// TEST SCAFFOLDING
 var t = 0;
 setInterval(async function() {
     //var time_req = await fetch('/time');

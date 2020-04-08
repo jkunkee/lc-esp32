@@ -1,10 +1,10 @@
 // To update
 // 1. delete everything after '='
 // 2. cd to this folder
-// 3. sed 's/"/\\"/g' test.html | sed 's/$/\\n"/g' | sed 's/^/"/g' >> homepage.c
-// 4. echo ';' >> homepage.c
-// 5. remove various test scaffolding
-static const char* main_page_content = "<html><head>\n""<html><head>\n"
+// 3. dos2unix < test.html | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' >> homepage.c
+// 4. undoctor TEST SCAFFOLDING sites
+static const char* main_page_content =
+"<html><head>\n"
 "<title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>\n"
 "<meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" />\n"
 "</head>\n"
