@@ -11,6 +11,9 @@
 // Time functions
 #include "time.h"
 
+// settings subsystem
+#include "settings_storage.h"
+
 // logging tag
 #define TAG "lc led.c"
 
@@ -491,29 +494,40 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
 // TODO: Consider fading from A to B based on a new color enum setting
 // TODO: Consider using HSV so colors stay balanced as they fade
 
-#define FADE_START_COLOR CONDENSE_LED_COLOR_T(150, 100, 80)
-static led_color_t fade_current_color = FADE_START_COLOR;
+static led_color_t fade_current_color = { 0 };
 static led_color_t fade_step_interval = { 0 };
 const int FADE_STEP_COUNT = 40;
-#define FADE_PX_DELAY_MS 150
+int fade_px_delay_ms = 150;
 
 void fade_start()
 {
-    fade_current_color = FADE_START_COLOR;
-    fill_all_rgb(FADE_PX_DELAY_MS, SPLAT_LED_COLOR_T(fade_current_color));
-    fade_step_interval.r = FADE_START_COLOR.r / FADE_STEP_COUNT;
-    fade_step_interval.g = FADE_START_COLOR.g / FADE_STEP_COUNT;
-    fade_step_interval.b = FADE_START_COLOR.b / FADE_STEP_COUNT;
+    uint32_t setting;
+
+    ESP_ERROR_CHECK( get_setting("sleep_fade_start_r", &setting) );
+    fade_current_color.r = (uint8_t)setting;
+    ESP_ERROR_CHECK( get_setting("sleep_fade_start_g", &setting) );
+    fade_current_color.g = (uint8_t)setting;
+    ESP_ERROR_CHECK( get_setting("sleep_fade_start_b", &setting) );
+    fade_current_color.b = (uint8_t)setting;
+
+    ESP_ERROR_CHECK( get_setting("sleep_fade_fill_time_ms", &setting) );
+    fade_px_delay_ms = (signed)setting / FADE_STEP_COUNT;
+
+    fill_all_rgb(fade_px_delay_ms, SPLAT_LED_COLOR_T(fade_current_color));
+
+    fade_step_interval.r = fade_current_color.r / FADE_STEP_COUNT;
+    fade_step_interval.g = fade_current_color.g / FADE_STEP_COUNT;
+    fade_step_interval.b = fade_current_color.b / FADE_STEP_COUNT;
     // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
-    if ((FADE_START_COLOR.r % FADE_STEP_COUNT) > fade_step_interval.r)
+    if ((fade_current_color.r % FADE_STEP_COUNT) > fade_step_interval.r)
     {
         fade_step_interval.r += 1;
 	}
-    if ((FADE_START_COLOR.g % FADE_STEP_COUNT) > fade_step_interval.g)
+    if ((fade_current_color.g % FADE_STEP_COUNT) > fade_step_interval.g)
     {
         fade_step_interval.g += 1;
 	}
-    if ((FADE_START_COLOR.b % FADE_STEP_COUNT) > fade_step_interval.b)
+    if ((fade_current_color.b % FADE_STEP_COUNT) > fade_step_interval.b)
     {
         fade_step_interval.b += 1;
 	}
@@ -545,16 +559,18 @@ void fade_step()
     {
         fade_current_color.b = 0;
     }
-    fill_all_rgb(FADE_PX_DELAY_MS, SPLAT_LED_COLOR_T(fade_current_color));
+    fill_all_rgb(fade_px_delay_ms, SPLAT_LED_COLOR_T(fade_current_color));
 }
-
-#define FILL_TIME_MS 9000
-#define fill_interval_ms (FILL_TIME_MS/LEDS_PER_STRIP)
 
 esp_err_t led_run_sync(led_pattern_t p)
 {
     esp_err_t retVal = ESP_OK;
     time_t now;
+    uint32_t fill_pattern_duration_ms;
+    int fill_interval_ms;
+
+    ESP_ERROR_CHECK( get_setting("fill_time_ms", &fill_pattern_duration_ms) );
+    fill_interval_ms = (signed)fill_pattern_duration_ms / LEDS_PER_STRIP;
 
     xSemaphoreTake(led_semaphore, portMAX_DELAY);
 
