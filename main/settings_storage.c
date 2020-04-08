@@ -54,6 +54,12 @@ setting_definition settings[] = {
         0, 1, 5, 10, 15, 30, 45,
         60, 2*60, 3*60, 4*60, 5*60, 6*60, 7*60, 8*60, 9*60, 10*60})),
     DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30, 45})),
+    DEFINE_SETTING(sleep_fade_start_r, 150, RANGE_ARRAY({40, 75, 100, 120, 150})),
+    DEFINE_SETTING(sleep_fade_start_g, 100, RANGE_ARRAY({40, 75, 100, 120, 150})),
+    DEFINE_SETTING(sleep_fade_start_b,  80, RANGE_ARRAY({40, 75, 100, 120, 150})),
+    DEFINE_SETTING(sleep_fade_fill_time_ms, 9000, RANGE_ARRAY({4000, 6000, 8000, 10000, 60000})),
+
+    DEFINE_SETTING(fill_time_ms, 9000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
 };
 int settings_len = LWIP_ARRAYSIZE(settings);
 
