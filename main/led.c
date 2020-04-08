@@ -65,6 +65,8 @@ const led_color_t LED_STATUS_COLOR_SUCCESS  = {.r = 0, .g = 100, .b = 0};
 #define CONDENSE_LED_COLOR_T(pr, pg, pb) ((const led_color_t){.r = pr, .g = pg, .b = pb})
 
 // TODO: Consider pattern-verb command structure instead of unified IDs
+// TODO: Gamma correction (http://rgb-123.com/ws2812-color-output/)
+// TODO: Move LED sample into local repo, push APA104 timing numbers into it
 
 void led_reset_status_indicators();
 
