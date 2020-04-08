@@ -21,6 +21,12 @@
     TRANSMOG(lpat_sudden_yellow) \
     TRANSMOG(lpat_sudden_black) \
     TRANSMOG(lpat_sudden_white) \
+    TRANSMOG(lpat_fill_red) \
+    TRANSMOG(lpat_fill_green) \
+    TRANSMOG(lpat_fill_blue) \
+    TRANSMOG(lpat_fill_cyan) \
+    TRANSMOG(lpat_fill_magenta) \
+    TRANSMOG(lpat_fill_yellow) \
     TRANSMOG(lpat_fill_black) \
     TRANSMOG(lpat_fill_white) \
     TRANSMOG(lpat_fill_whyamionfirewhite) \

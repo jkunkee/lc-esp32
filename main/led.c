@@ -548,6 +548,9 @@ void fade_step()
     fill_all_rgb(FADE_PX_DELAY_MS, SPLAT_LED_COLOR_T(fade_current_color));
 }
 
+#define FILL_TIME_MS 9000
+#define fill_interval_ms (FILL_TIME_MS/LEDS_PER_STRIP)
+
 esp_err_t led_run_sync(led_pattern_t p)
 {
     esp_err_t retVal = ESP_OK;
@@ -559,45 +562,63 @@ esp_err_t led_run_sync(led_pattern_t p)
     {
     // instant color patterns
     case lpat_sudden_red:
-        set_all_rgb(75, 0, 0);
+        set_all_rgb(PXS_RED(PX_HARD));
         break;
     case lpat_sudden_green:
-        set_all_rgb(0, 75, 0);
+        set_all_rgb(PXS_GREEN(PX_HARD));
         break;
     case lpat_sudden_blue:
-        set_all_rgb(0, 0, 75);
+        set_all_rgb(PXS_BLUE(PX_HARD));
         break;
     case lpat_sudden_cyan:
-        set_all_rgb(0, 75, 75);
+        set_all_rgb(PXS_CYAN(PX_HARD));
         break;
     case lpat_sudden_magenta:
-        set_all_rgb(75, 0, 75);
+        set_all_rgb(PXS_MAGENTA(PX_HARD));
         break;
     case lpat_sudden_yellow:
-        set_all_rgb(75, 75, 0);
+        set_all_rgb(PXS_YELLOW(PX_HARD));
         break;
     case lpat_sudden_black:
-        set_all_rgb(0, 0, 0);
+        set_all_rgb(PXS_OFF);
         break;
     case lpat_sudden_white:
-        set_all_rgb(75, 75, 75);
+        set_all_rgb(PXS_ON);
         break;
     // gradual fill patterns
+    case lpat_fill_red:
+        fill_all_rgb(fill_interval_ms, PXS_RED(PX_HARD));
+        break;
+    case lpat_fill_green:
+        fill_all_rgb(fill_interval_ms, PXS_GREEN(PX_HARD));
+        break;
+    case lpat_fill_blue:
+        fill_all_rgb(fill_interval_ms, PXS_BLUE(PX_HARD));
+        break;
+    case lpat_fill_cyan:
+        fill_all_rgb(fill_interval_ms, PXS_CYAN(PX_HARD));
+        break;
+    case lpat_fill_magenta:
+        fill_all_rgb(fill_interval_ms, PXS_MAGENTA(PX_HARD));
+        break;
+    case lpat_fill_yellow:
+        fill_all_rgb(fill_interval_ms, PXS_YELLOW(PX_HARD));
+        break;
     case lpat_fill_black:
-        fill_all_rgb(150, 0, 0, 0);
+        fill_all_rgb(fill_interval_ms, PXS_OFF);
         break;
     case lpat_fill_white:
-        fill_all_rgb(150, 75, 75, 75);
+        fill_all_rgb(fill_interval_ms, PXS_ON);
         break;
     // https://www.schlockmercenary.com/2014-12-08
     case lpat_fill_whyamionfirewhite:
-        fill_all_rgb(150, 255, 255, 255);
+        fill_all_rgb(fill_interval_ms, PXS_GREYSCALE(255));
         break;
     case lpat_fill_auiiieeyellow:
-        fill_all_rgb(150, 255, 255, 0);
+        fill_all_rgb(fill_interval_ms, PXS_YELLOW(255));
         break;
     case lpat_fill_whosebloodisthisred:
-        fill_all_rgb(150, 255, 0, 0);
+        fill_all_rgb(fill_interval_ms, PXS_RED(255));
         break;
     // data patterns
     case lpat_current_time:
@@ -615,7 +636,7 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
-        show_integer(1, sizeof(now)*8, now, 0, 0, 0, 100, 0);
+        show_integer(1, sizeof(now)*8, now, 0, 0, PXS_GREEN(PX_HARD));
         strips[1]->refresh(strips[1], LED_STRIP_ACTION_TIMEOUT_MS);
         break;
     case lpat_fade_start:
