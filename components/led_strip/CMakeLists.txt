@@ -1,4 +1,4 @@
-set(component_srcs "src/led_strip_rmt_ws2812.c")
+set(component_srcs "src/led_strip_rmt_apa104.c")
 
 idf_component_register(SRCS "${component_srcs}"
                        INCLUDE_DIRS "include"

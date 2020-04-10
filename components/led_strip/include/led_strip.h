@@ -113,13 +113,13 @@ typedef struct {
     }
 
 /**
-* @brief Install a new ws2812 driver (based on RMT peripheral)
+* @brief Install a new apa104 driver (based on RMT peripheral)
 *
 * @param config: LED strip configuration
 * @return
 *      LED strip instance or NULL
 */
-led_strip_t *led_strip_new_rmt_ws2812(const led_strip_config_t *config);
+led_strip_t *led_strip_new_rmt_apa104(const led_strip_config_t *config);
 
 #ifdef __cplusplus
 }

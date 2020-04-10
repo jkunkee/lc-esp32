@@ -98,9 +98,9 @@ esp_err_t led_init(void)
         ESP_ERROR_CHECK(rmt_config(&config));
         ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
 
-        // install ws2812 driver
+        // install apa104 driver
         led_strip_config_t strip_config = LED_STRIP_DEFAULT_CONFIG(LEDS_PER_STRIP, (led_strip_dev_t)config.channel);
-        led_strip_t *strip = led_strip_new_rmt_ws2812(&strip_config);
+        led_strip_t *strip = led_strip_new_rmt_apa104(&strip_config);
         if (!strip) {
             ESP_LOGE(TAG, "install WS2812 driver #%d failed", stripIdx+1);
             retVal = ESP_FAIL;
