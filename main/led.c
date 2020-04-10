@@ -130,7 +130,7 @@ esp_err_t led_init(void)
  */
 void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b)
 {
-    h %= 360; // h -> [0,360]
+    h %= 360; // h -> [0,359]
     uint32_t rgb_max = v * 2.55f;
     uint32_t rgb_min = rgb_max * (100 - s) / 100.0f;
 
