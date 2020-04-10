@@ -20,6 +20,7 @@
 #define LED_STRIP_COUNT 2
 #define LEDS_PER_STRIP 60
 
+// TODO: Push APA104 timing numbers into driver
 // APA104 per-pixel time is 1.36(+-.15us)+.35us(+-.15us)=1.71us(+-.3us)
 //        per-refresh time is 24us
 #define LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS (((1360+150+350+150)*LEDS_PER_STRIP+24000)/1000000)
@@ -65,7 +66,6 @@ const led_color_t LED_STATUS_COLOR_SUCCESS  = {.r = 0, .g = 100, .b = 0};
 #define CONDENSE_LED_COLOR_T(pr, pg, pb) ((const led_color_t){.r = pr, .g = pg, .b = pb})
 
 // TODO: Consider pattern-verb command structure instead of unified IDs
-// TODO: Move LED sample into local repo, push APA104 timing numbers into it
 
 void led_reset_status_indicators();
 
