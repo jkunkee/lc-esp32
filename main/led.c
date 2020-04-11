@@ -471,6 +471,7 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
 // TODO: Consider fading in/out based on bool setting
 // TODO: Consider fading from A to B based on a new color enum setting
 // TODO: Consider using HSV so colors stay balanced as they fade
+// TODO: Consider using color temperature https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
 static led_color_t fade_current_color = { 0 };
 static led_color_t fade_step_interval = { 0 };
