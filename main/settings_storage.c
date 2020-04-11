@@ -57,7 +57,7 @@ setting_definition settings[] = {
     DEFINE_SETTING(sleep_fade_start_r, 150, RANGE_ARRAY({0, 40, 75, 100, 120, 150})),
     DEFINE_SETTING(sleep_fade_start_g, 100, RANGE_ARRAY({0, 40, 75, 100, 120, 150})),
     DEFINE_SETTING(sleep_fade_start_b,  75, RANGE_ARRAY({0, 40, 75, 100, 120, 150})),
-    DEFINE_SETTING(sleep_fade_fill_time_ms, 8000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
+    DEFINE_SETTING(sleep_fade_fill_time_ms, 9000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
 
     DEFINE_SETTING(fill_time_ms, 9000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
 };
