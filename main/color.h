@@ -1,4 +1,11 @@
 
+#pragma once
+
+// required by many headers
+#include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
 // color definitions
 // pixel fraction definitions
 #define PX_OFF  0
