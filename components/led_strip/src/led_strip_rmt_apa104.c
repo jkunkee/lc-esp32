@@ -36,11 +36,13 @@ static const char *TAG = "apa104";
 #define APA104_T0L_NS (1360)
 #define APA104_T1H_NS (1360)
 #define APA104_T1L_NS (350)
+#define APA104_RESET_US (50)
 
 static uint32_t apa104_t0h_ticks = 0;
 static uint32_t apa104_t1h_ticks = 0;
 static uint32_t apa104_t0l_ticks = 0;
 static uint32_t apa104_t1l_ticks = 0;
+static uint32_t apa104_reset_ticks = 0;
 
 // Gamma correction (http://rgb-123.com/ws2812-color-output/)
 uint8_t gamma_lut[256] = {
@@ -94,6 +96,7 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
     }
     const rmt_item32_t bit0 = {{{ apa104_t0h_ticks, 1, apa104_t0l_ticks, 0 }}}; //Logical 0
     const rmt_item32_t bit1 = {{{ apa104_t1h_ticks, 1, apa104_t1l_ticks, 0 }}}; //Logical 1
+    const rmt_item32_t reset = {{{ 0, 0, apa104_reset_ticks, 0 }}};
     size_t size = 0;
     size_t num = 0;
     uint8_t *psrc = (uint8_t *)src;
@@ -138,9 +141,6 @@ static esp_err_t apa104_refresh(led_strip_t *strip, uint32_t timeout_ms)
     STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
     ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(timeout_ms));
-    // Allow for 24-50us of logic low between refresh
-    // TODO: do this properly using the RMT transmitter
-    vTaskDelay(1 / portTICK_PERIOD_MS);
 err:
     return ret;
 }
@@ -179,6 +179,7 @@ led_strip_t *led_strip_new_rmt_apa104(const led_strip_config_t *config)
     apa104_t0l_ticks = (uint32_t)(ratio * APA104_T0L_NS);
     apa104_t1h_ticks = (uint32_t)(ratio * APA104_T1H_NS);
     apa104_t1l_ticks = (uint32_t)(ratio * APA104_T1L_NS);
+    apa104_reset_ticks = (uint32_t)(ratio * (APA104_RESET_US * 1000));
 
     // set apa104 to rmt adapter
     rmt_translator_init((rmt_channel_t)config->dev, apa104_rmt_adapter);
