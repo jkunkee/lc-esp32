@@ -86,7 +86,7 @@ typedef struct {
  * @param[out] translated_size: number of source data that got converted
  * @param[out] item_num: number of RMT items which are converted from source data
  */
- static int no_room_for_postamble_happened = 0;
+static int no_room_for_postamble_happened = 0;
 static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, size_t src_size,
         size_t wanted_num, size_t *translated_size, size_t *item_num)
 {
@@ -162,7 +162,7 @@ static esp_err_t apa104_set_pixel(led_strip_t *strip, uint32_t index, uint32_t r
     apa104_t *apa104 = __containerof(strip, apa104_t, parent);
     STRIP_CHECK(index < apa104->strip_len, "index out of the maximum number of leds", err, ESP_ERR_INVALID_ARG);
     uint32_t start = index * 3;
-    // In thr order of GRB
+    // In the order of GRB
     apa104->buffer[start + 0] = gamma_lut[green & 0xFF];
     apa104->buffer[start + 1] = gamma_lut[red & 0xFF];
     apa104->buffer[start + 2] = gamma_lut[blue & 0xFF];
