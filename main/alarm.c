@@ -252,7 +252,8 @@ void alarm_task_func(void* param)
                 snooze_start_time = now;
                 led_run_sync(lpat_fill_black);
             }
-            else
+            // Don't run one last pair before turning off, just turn off.
+            else if (alarm_current_state == alarm_next_state)
             {
                 led_run_sync(lpat_fill_black);
                 led_run_sync(alarm_pattern);
