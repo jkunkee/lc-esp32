@@ -89,18 +89,25 @@ typedef struct {
 static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, size_t src_size,
         size_t wanted_num, size_t *translated_size, size_t *item_num)
 {
+    // input validation
     if (src == NULL || dest == NULL) {
         *translated_size = 0;
         *item_num = 0;
         return;
     }
+
+    // useful constants for translating LED bits into APA104 signals
     const rmt_item32_t bit0 = {{{ apa104_t0h_ticks, 1, apa104_t0l_ticks, 0 }}}; //Logical 0
     const rmt_item32_t bit1 = {{{ apa104_t1h_ticks, 1, apa104_t1l_ticks, 0 }}}; //Logical 1
     const rmt_item32_t reset = {{{ 0, 0, apa104_reset_ticks, 0 }}};
+
+    // set up loop variables
     size_t size = 0;
     size_t num = 0;
     uint8_t *psrc = (uint8_t *)src;
     rmt_item32_t *pdest = dest;
+
+    // translate the input bytes into RMT samples
     while (size < src_size && num < wanted_num) {
         for (int i = 0; i < 8; i++) {
             // MSB first
@@ -115,6 +122,8 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
         size++;
         psrc++;
     }
+
+    // return the values needed by the subsystem
     *translated_size = size;
     *item_num = num;
 }
