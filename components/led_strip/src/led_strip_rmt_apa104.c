@@ -90,7 +90,8 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
         size_t wanted_num, size_t *translated_size, size_t *item_num)
 {
     // input validation
-    if (src == NULL || dest == NULL) {
+    // in order to fit the preamble/postamble, wanted_num must be at least 2.
+    if (src == NULL || dest == NULL || wanted_num < 2) {
         *translated_size = 0;
         *item_num = 0;
         return;
@@ -107,6 +108,20 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
     uint8_t *psrc = (uint8_t *)src;
     rmt_item32_t *pdest = dest;
 
+    // Note that this is set up to take entire bytes as inputs. This makes adding just one
+    // rmt_item32_t for the 'reset' period a challenge. To solve this:
+    //
+    // 1. The rmt_write_sample call tells the RMT subsystem that the input buffer is two bytes
+    //    bigger than it is. This routine is allowed to return too little data, and this forces
+    //    the subsystem to allocate enough extra space in dest for the 'reset' samples.
+    // 2. Insert the appropriate preamble. Increment the destination pointer and sample count.
+    pdest->val = reset.val;
+    pdest++;
+    num += 1;
+    // 3. Claim the input bytes have already been converted to samples so the conversion
+    //    loop will work correctly.
+    size += 2;
+
     // translate the input bytes into RMT samples
     while (size < src_size && num < wanted_num) {
         for (int i = 0; i < 8; i++) {
@@ -121,6 +136,14 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
         }
         size++;
         psrc++;
+    }
+
+    // 4. This code inserts the appropriate postamble. Buffer safety check first; increment again.
+    if (num < wanted_num)
+    {
+        pdest->val = reset.val;
+        pdest++;
+        num++;
     }
 
     // return the values needed by the subsystem
@@ -147,7 +170,8 @@ static esp_err_t apa104_refresh(led_strip_t *strip, uint32_t timeout_ms)
 {
     esp_err_t ret = ESP_OK;
     apa104_t *apa104 = __containerof(strip, apa104_t, parent);
-    STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3, true) == ESP_OK,
+    // Pretend there are two extra bytes of data so the adapter can add the 'reset' preamble and postamble
+    STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3 + 2, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
     ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(timeout_ms));
 err:
