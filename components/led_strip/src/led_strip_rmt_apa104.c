@@ -86,6 +86,7 @@ typedef struct {
  * @param[out] translated_size: number of source data that got converted
  * @param[out] item_num: number of RMT items which are converted from source data
  */
+ static int no_room_for_postamble_happened = 0;
 static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, size_t src_size,
         size_t wanted_num, size_t *translated_size, size_t *item_num)
 {
@@ -145,6 +146,10 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
         pdest++;
         num++;
     }
+    else
+    {
+        no_room_for_postamble_happened = 1;
+    }
 
     // return the values needed by the subsystem
     *translated_size = size;
@@ -174,6 +179,7 @@ static esp_err_t apa104_refresh(led_strip_t *strip, uint32_t timeout_ms)
     STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3 + 2, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
     ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(timeout_ms));
+    if (no_room_for_postamble_happened) { ESP_LOGE(TAG, "no_room_for_postamble_happened!!!"); no_room_for_postamble_happened = 0; }
 err:
     return ret;
 }
