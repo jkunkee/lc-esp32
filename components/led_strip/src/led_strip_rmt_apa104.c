@@ -11,6 +11,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+// Persuant to the Apache License, Version 2.0, the author hereby provides
+// notice that this file has been modified from the form provided by Espressif
+// Systems (Shanghai) PTE LTD.
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
