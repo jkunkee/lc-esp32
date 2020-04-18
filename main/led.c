@@ -62,6 +62,7 @@ esp_err_t led_init(void)
         rmt_config_t config = RMT_DEFAULT_CONFIG_TX(gpios[stripIdx], channels[stripIdx]);
         // set counter clock to 40MHz
         config.clk_div = 2;
+        config.mem_block_num = 1; // This is more to note that setting this to anything else...breaks it. Perf issues and useless signals.
         ESP_ERROR_CHECK(rmt_config(&config));
         ESP_ERROR_CHECK(rmt_driver_install(config.channel, 0, 0));
 
