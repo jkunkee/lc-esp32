@@ -103,13 +103,11 @@ typedef struct {
  * @param[out] translated_size: number of source data that got converted
  * @param[out] item_num: number of RMT items which are converted from source data
  */
-static int no_room_for_postamble_happened = 0;
 static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, size_t src_size,
         size_t wanted_num, size_t *translated_size, size_t *item_num)
 {
     // input validation
-    // in order to fit the preamble/postamble, wanted_num must be at least 2.
-    if (src == NULL || dest == NULL || wanted_num < 2) {
+    if (src == NULL || dest == NULL) {
         *translated_size = 0;
         *item_num = 0;
         return;
@@ -118,27 +116,12 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
     // useful constants for translating LED bits into APA104 signals
     const rmt_item32_t bit0 = {{{ apa104_t0h_ticks, 1, apa104_t0l_ticks, 0 }}}; //Logical 0
     const rmt_item32_t bit1 = {{{ apa104_t1h_ticks, 1, apa104_t1l_ticks, 0 }}}; //Logical 1
-    const rmt_item32_t reset = {{{ 0, 0, apa104_reset_ticks, 0 }}};
 
     // set up loop variables
     size_t size = 0;
     size_t num = 0;
     uint8_t *psrc = (uint8_t *)src;
     rmt_item32_t *pdest = dest;
-
-    // Note that this is set up to take entire bytes as inputs. This makes adding just one
-    // rmt_item32_t for the 'reset' period a challenge. To solve this:
-    //
-    // 1. The rmt_write_sample call tells the RMT subsystem that the input buffer is two bytes
-    //    bigger than it is. This routine is allowed to return too little data, and this forces
-    //    the subsystem to allocate enough extra space in dest for the 'reset' samples.
-    // 2. Insert the appropriate preamble. Increment the destination pointer and sample count.
-    pdest->val = reset.val;
-    pdest++;
-    num += 1;
-    // 3. Claim the input bytes have already been converted to samples so the conversion
-    //    loop will work correctly.
-    size += 2;
 
     // translate the input bytes into RMT samples
     while (size < src_size && num < wanted_num) {
@@ -156,20 +139,45 @@ static void IRAM_ATTR apa104_rmt_adapter(const void *src, rmt_item32_t *dest, si
         psrc++;
     }
 
-    // 4. This code inserts the appropriate postamble. Buffer safety check first; increment again.
-    if (num < wanted_num)
-    {
-        pdest->val = reset.val;
-        pdest++;
-        num++;
+    // return the values needed by the subsystem
+    *translated_size = size;
+    *item_num = num;
+}
+
+// RMT adapter for 'reset' period
+static void IRAM_ATTR apa104_rmt_adapter_for_reset(const void *src, rmt_item32_t *dest, size_t src_size,
+        size_t wanted_num, size_t *translated_size, size_t *item_num)
+{
+    // input validation
+    if (src == NULL || dest == NULL || src_size < 1 || wanted_num < 8) {
+        *translated_size = 0;
+        *item_num = 0;
+        return;
     }
-    else
+
+    const rmt_item32_t reset = {{{ apa104_reset_ticks, 0, apa104_reset_ticks, 0 }}};
+    const rmt_item32_t nop = {{{ 0, 0, 0, 0 }}};
+
+    // set up loop variables
+    size_t num = 0;
+    rmt_item32_t *pdest = dest;
+
+    for (int bitIdx = 0; bitIdx < 8; bitIdx++)
     {
-        no_room_for_postamble_happened = 1;
+        if (bitIdx == 0)
+        {
+            pdest->val = reset.val;
+        }
+        else
+        {
+            pdest->val = nop.val;
+        }
+        num++;
+        pdest++;
     }
 
     // return the values needed by the subsystem
-    *translated_size = size;
+    *translated_size = 1;
     *item_num = num;
 }
 
@@ -192,10 +200,22 @@ static esp_err_t apa104_refresh(led_strip_t *strip)
 {
     esp_err_t ret = ESP_OK;
     apa104_t *apa104 = __containerof(strip, apa104_t, parent);
-    // Pretend there are two extra bytes of data so the adapter can add the 'reset' preamble and postamble
-    STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3 + 2, true) == ESP_OK,
+    uint8_t unused_buf = 1;
+
+    // The adapter function takes a (potentially partial) buffer of bytes and
+    // translates it into a buffer of RMT samples.
+    // First, set up the 'reset' adapter and run a 'reset' pattern.
+    rmt_translator_init(apa104->rmt_channel, apa104_rmt_adapter_for_reset);
+
+    STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, &unused_buf, 1, false) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
-    if (no_room_for_postamble_happened) { ESP_LOGE(TAG, "no_room_for_postamble_happened!!!"); no_room_for_postamble_happened = 0; }
+    ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS((APA104_RESET_US / 1000) + 1));
+
+    // Then set up the normal adapter and run the color pattern.
+    rmt_translator_init(apa104->rmt_channel, apa104_rmt_adapter);
+
+    STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3, false) == ESP_OK,
+                "transmit RMT samples failed", err, ESP_FAIL);
     ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(APA104_WORST_CASE_TOTAL_MS(apa104->strip_len)));
 err:
     return ret;
@@ -222,6 +242,7 @@ led_strip_t *led_strip_new_rmt_apa104(const led_strip_config_t *config)
     STRIP_CHECK(config, "configuration can't be null", err, NULL);
 
     // 24 bits per led
+    // 1 byte of 'reset' preamble, 1 byte of 'reset' postamble
     uint32_t apa104_size = sizeof(apa104_t) + config->max_leds * 3;
     apa104_t *apa104 = calloc(1, apa104_size);
     STRIP_CHECK(apa104, "request memory for apa104 failed", err, NULL);
@@ -236,9 +257,6 @@ led_strip_t *led_strip_new_rmt_apa104(const led_strip_config_t *config)
     apa104_t1h_ticks = (uint32_t)(ratio * APA104_T1H_NS);
     apa104_t1l_ticks = (uint32_t)(ratio * APA104_T1L_NS);
     apa104_reset_ticks = (uint32_t)(ratio * (APA104_RESET_US * 1000));
-
-    // set apa104 to rmt adapter
-    rmt_translator_init((rmt_channel_t)config->dev, apa104_rmt_adapter);
 
     apa104->rmt_channel = (rmt_channel_t)config->dev;
     apa104->strip_len = config->max_leds;
