@@ -43,6 +43,18 @@ static const char *TAG = "apa104";
 #define APA104_T1L_NS (350)
 #define APA104_RESET_US (50)
 
+// APA104 per-pixel time is 1.36(+-.15us)+.35us(+-.15us)=1.71us(+-.3us)
+//        per-refresh time is 24us
+#define APA104_TL_ERROR_NS (150)
+#define APA104_TH_ERROR_NS (150)
+
+#define APA104_WORST_CASE_PER_LED_NS (APA104_T0H_NS + APA104_TH_ERROR_NS + APA104_T0L_NS + APA104_TH_ERROR_NS)
+#define APA104_WORST_CASE_TOTAL_CALCULATED_MS(led_count) (((APA104_WORST_CASE_PER_LED_NS * led_count) / 1000000) + 1)
+#define APA104_WORST_CASE_TOTAL_MINIMUM_MS (100)
+#define APA104_WORST_CASE_TOTAL_MS(led_count) \
+    (APA104_WORST_CASE_TOTAL_MINIMUM_MS > APA104_WORST_CASE_TOTAL_CALCULATED_MS(led_count) ? \
+     APA104_WORST_CASE_TOTAL_MINIMUM_MS : APA104_WORST_CASE_TOTAL_CALCULATED_MS(led_count))
+
 static uint32_t apa104_t0h_ticks = 0;
 static uint32_t apa104_t1h_ticks = 0;
 static uint32_t apa104_t0l_ticks = 0;
@@ -176,25 +188,25 @@ err:
     return ret;
 }
 
-static esp_err_t apa104_refresh(led_strip_t *strip, uint32_t timeout_ms)
+static esp_err_t apa104_refresh(led_strip_t *strip)
 {
     esp_err_t ret = ESP_OK;
     apa104_t *apa104 = __containerof(strip, apa104_t, parent);
     // Pretend there are two extra bytes of data so the adapter can add the 'reset' preamble and postamble
     STRIP_CHECK(rmt_write_sample(apa104->rmt_channel, apa104->buffer, apa104->strip_len * 3 + 2, true) == ESP_OK,
                 "transmit RMT samples failed", err, ESP_FAIL);
-    ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(timeout_ms));
     if (no_room_for_postamble_happened) { ESP_LOGE(TAG, "no_room_for_postamble_happened!!!"); no_room_for_postamble_happened = 0; }
+    ret = rmt_wait_tx_done(apa104->rmt_channel, pdMS_TO_TICKS(APA104_WORST_CASE_TOTAL_MS(apa104->strip_len)));
 err:
     return ret;
 }
 
-static esp_err_t apa104_clear(led_strip_t *strip, uint32_t timeout_ms)
+static esp_err_t apa104_clear(led_strip_t *strip)
 {
     apa104_t *apa104 = __containerof(strip, apa104_t, parent);
     // Write zero to turn off all leds
     memset(apa104->buffer, 0, apa104->strip_len * 3);
-    return apa104_refresh(strip, timeout_ms);
+    return apa104_refresh(strip);
 }
 
 static esp_err_t apa104_del(led_strip_t *strip)

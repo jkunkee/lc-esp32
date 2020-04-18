@@ -66,7 +66,7 @@ struct led_strip_s {
     * @note:
     *      After updating the LED colors in the memory, a following invocation of this API is needed to flush colors to strip.
     */
-    esp_err_t (*refresh)(led_strip_t *strip, uint32_t timeout_ms);
+    esp_err_t (*refresh)(led_strip_t *strip);
 
     /**
     * @brief Clear LED strip (turn off all LEDs)
@@ -79,7 +79,7 @@ struct led_strip_s {
     *      - ESP_ERR_TIMEOUT: Clear LEDs failed because of timeout
     *      - ESP_FAIL: Clear LEDs failed because some other error occurred
     */
-    esp_err_t (*clear)(led_strip_t *strip, uint32_t timeout_ms);
+    esp_err_t (*clear)(led_strip_t *strip);
 
     /**
     * @brief Free LED strip resources

@@ -23,15 +23,6 @@
 #define LED_STRIP_COUNT 2
 #define LEDS_PER_STRIP 60
 
-// TODO: Push APA104 timing numbers into driver
-// APA104 per-pixel time is 1.36(+-.15us)+.35us(+-.15us)=1.71us(+-.3us)
-//        per-refresh time is 24us
-#define LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS (((1360+150+350+150)*LEDS_PER_STRIP+24000)/1000000)
-#define LED_STRIP_ACTION_MAX_TIME_MIN_MS (100)
-#define LED_STRIP_ACTION_TIMEOUT_MS \
-    (LED_STRIP_ACTION_MAX_TIME_MIN_MS > LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS ? \
-     LED_STRIP_ACTION_MAX_TIME_MIN_MS : LED_STRIP_ACTION_MAX_TIME_APPROXIMATION_MS)
-
 // status colors
 const led_color_t LED_STATUS_COLOR_OFF      = {.r = 0, .g = 0, .b = 0};
 const led_color_t LED_STATUS_COLOR_ON       = {.r = 100, .g = 100, .b = 100};
@@ -84,9 +75,9 @@ esp_err_t led_init(void)
         }
         strips[stripIdx] = strip;
         // Clear LED strip (turn off all LEDs)
-        ESP_ERROR_CHECK(strip->clear(strip, LED_STRIP_ACTION_TIMEOUT_MS));
+        ESP_ERROR_CHECK(strip->clear(strip));
         // Flush RGB values to LEDs
-        ESP_ERROR_CHECK(strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS));
+        ESP_ERROR_CHECK(strip->refresh(strip));
     }
 
     led_reset_status_indicators();
@@ -112,7 +103,7 @@ void color_showcase()
         strip->set_pixel(strip, ledIdx++, PXS_MAGENTA(STEP_SIZE * set + 1));
         strip->set_pixel(strip, ledIdx++, PXS_YELLOW(STEP_SIZE * set + 1));
 	}
-    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+    strip->refresh(strip);
 
     const int HUE_CHUNK_SIZE = 359 / LEDS_PER_STRIP;
     strip = strips[1];
@@ -124,7 +115,7 @@ void color_showcase()
 
         strip->set_pixel(strip, pixelIdx, r, g, b);
 	}
-    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+    strip->refresh(strip);
 }
 
 void set_all_rgb(int r, int g, int b)
@@ -137,7 +128,7 @@ void set_all_rgb(int r, int g, int b)
         {
             strip->set_pixel(strip, pixelIdx, r, g, b);
         }
-        strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+        strip->refresh(strip);
     }
     ESP_LOGI(TAG, "Running pattern %s complete.", __FUNCTION__);
 }
@@ -151,7 +142,7 @@ void fill_all_rgb(int per_pixel_delay_ms, int r, int g, int b)
         {
             led_strip_t* strip = strips[stripIdx];
             strip->set_pixel(strip, pixelIdx, r, g, b);
-            strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+            strip->refresh(strip);
         }
         vTaskDelay(per_pixel_delay_ms / portTICK_PERIOD_MS);
     }
@@ -171,7 +162,7 @@ void fill_brightness_gradient(uint8_t min, uint8_t max)
             char brightness = pixelIdx * step_size;
             strip->set_pixel(strip, pixelIdx, PXS_GREYSCALE(brightness));
         }
-        strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+        strip->refresh(strip);
     }
 }
 
@@ -349,8 +340,8 @@ void show_current_time()
 
     // Flush pattern to strips
 
-    upperStrip->refresh(upperStrip, LED_STRIP_ACTION_TIMEOUT_MS);
-    lowerStrip->refresh(lowerStrip, LED_STRIP_ACTION_TIMEOUT_MS);
+    upperStrip->refresh(upperStrip);
+    lowerStrip->refresh(lowerStrip);
 
 #endif // LED_STRIP_COUNT and LEDS_PER_STRIP
 }
@@ -382,13 +373,13 @@ void led_refresh_status_indicators()
             strip->set_pixel(strip, pixelIdx, SPLAT_LED_COLOR_T(LED_STATUS_COLOR_OFF));
         }
     }
-    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+    strip->refresh(strip);
 
     time_t now;
     time(&now);
     // N.B. Will fail with 64-bit time_t
     show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, PXS_GREEN(PX_HARD));
-    strip->refresh(strip, LED_STRIP_ACTION_TIMEOUT_MS);
+    strip->refresh(strip);
 }
 
 bool led_current_display_is_status = pdFALSE;
@@ -576,7 +567,7 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
         show_integer(1, sizeof(now)*8, now, 0, 0, PXS_GREEN(PX_HARD));
-        strips[1]->refresh(strips[1], LED_STRIP_ACTION_TIMEOUT_MS);
+        strips[1]->refresh(strips[1]);
         break;
     case lpat_fade_start:
         fade_start();
