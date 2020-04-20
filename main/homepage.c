@@ -7,6 +7,7 @@ static const char* main_page_content =
 "<html><head>\n"
 "<title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>\n"
 "<meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\" />\n"
+"<meta name=\"viewport\" content=\"width=device-width\" />\n"
 "</head>\n"
 "<body bgcolor=\"0x111111\" style=\"color: #BBBBEE;\">\n"
 "<h1>"CONFIG_LC_MDNS_INSTANCE" Control Panel</h1>\n"
