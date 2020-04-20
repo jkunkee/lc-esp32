@@ -46,7 +46,9 @@ const char* led_pattern_names[] = {
 
 led_strip_t* strips[LED_STRIP_COUNT];
 
-esp_err_t led_init(void)
+EventGroupHandle_t led_init_task_event;
+
+void led_init_task(void* param)
 {
     int gpios[LED_STRIP_COUNT] = {CONFIG_LC_LED_STRIP_1_DATA_PIN, CONFIG_LC_LED_STRIP_2_DATA_PIN};
     int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_4};
@@ -83,7 +85,64 @@ esp_err_t led_init(void)
 
     led_reset_status_indicators();
 
-    return retVal;
+    *((esp_err_t*)param) = retVal;
+    xEventGroupSetBits(led_init_task_event, BIT0);
+    vTaskDelete(NULL);
+}
+
+esp_err_t led_init(void)
+{
+    TaskHandle_t task;
+    esp_err_t ret;
+
+    led_init_task_event = xEventGroupCreate();
+
+    // When the RMT driver and the WiFi driver are running on the same CPU, the
+    // RMT peripheral occasionally transmits extra bits. This can be detected
+    // by watching the data line of the last LED on the APA104 strand: it
+    // should never see any data when the strand is being properly addressed,
+    // but in this situation extra bits come through.
+    //
+    // It turns out this is a common problem with the RMT peripheral, as
+    // described in various places:
+    // Flickering on WS2812B LEDs, but only when WiFi installed:
+    // https://esp32.com/viewtopic.php?f=2&t=3980
+    // RMT interrupt misconfiguration causes the buffer to be retransmitted:
+    // https://github.com/espressif/esp-idf/issues/3824
+    //
+    // The solution implemented here is to move the RMT ISR to the other CPU by
+    // moving calls to rmt_driver_install into a task affinitized to it.
+    // Other solutions, like troubleshooting the ISR or making the RMT
+    // buffer deeper, are theoretically possible but require more investigation
+    // than I am willing to do for this project. (As noted elsewhere, naively
+    // increasing mem_block_num is strangely insufficient.)
+
+    BaseType_t err = xTaskCreatePinnedToCore(
+        led_init_task,
+        "led.c init task",
+        4*1024,
+        &ret,
+        1,
+        &task,
+        1
+        );
+
+    if (err != pdPASS)
+    {
+        vEventGroupDelete(led_init_task_event);
+        return ESP_FAIL;
+	}
+
+    xEventGroupWaitBits(led_init_task_event,
+        BIT0,
+        pdTRUE,
+        pdFALSE,
+        portMAX_DELAY
+        );
+
+    vEventGroupDelete(led_init_task_event);
+
+    return ret;
 }
 
 void color_showcase()
