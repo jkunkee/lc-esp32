@@ -229,9 +229,9 @@ void app_main(void)
         },
     };
     // Tell the wifi driver to operate as a client station, not an access point
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+    ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     // Tell the wifi driver to use the provided SSID/password
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+    ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
 
     // Event handlers
     // This is where the bulk of the work happens.
