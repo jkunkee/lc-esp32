@@ -49,7 +49,7 @@ led_strip_t* strips[LED_STRIP_COUNT];
 esp_err_t led_init(void)
 {
     int gpios[LED_STRIP_COUNT] = {CONFIG_LC_LED_STRIP_1_DATA_PIN, CONFIG_LC_LED_STRIP_2_DATA_PIN};
-    int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_1};
+    int channels[LED_STRIP_COUNT] = {RMT_CHANNEL_0, RMT_CHANNEL_4};
 
     // Use a mutex to only run one pattern at a time
     led_semaphore = xSemaphoreCreateMutex();
