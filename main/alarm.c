@@ -235,8 +235,7 @@ void alarm_task_func(void* param)
             sleep_delay = sleep_delay_min * 60;
             ESP_ERROR_CHECK( get_setting("sleep_fade_time_min", &sleep_fade_time_min) );
             sleep_step = sleep_fade_time_min * 60 / FADE_STEP_COUNT;
-            ESP_LOGI(TAG, "Configuration complete, blanking LEDs");
-            led_run_sync(lpat_sudden_black);
+            ESP_LOGI(TAG, "Configuration complete.");
             break;
         case waiting:
             // When control comes back, we'll compare then and now to see if the alarm should fire.
