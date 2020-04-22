@@ -23,6 +23,34 @@
 #define LED_STRIP_COUNT 2
 #define LEDS_PER_STRIP 60
 
+// TODO replace with color.h definitions
+// color definitions
+// pixel fraction definitions
+#define PX_OFF  0
+#define PX_NOFF 1
+#define PX_SOFT 40
+#define PX_HARD 100
+// templates for common colors
+#define PXS_RED(intensity)       intensity, PX_OFF, PX_OFF
+#define PXS_GREEN(intensity)     PX_OFF, intensity, PX_OFF
+#define PXS_BLUE(intensity)      PX_OFF, PX_OFF, intensity
+#define PXS_CYAN(intensity)      PX_OFF, intensity, intensity
+#define PXS_MAGENTA(intensity)   intensity, PX_OFF, intensity
+#define PXS_YELLOW(intensity)    intensity, intensity, PX_OFF
+#define PXS_GREYSCALE(intensity) intensity, intensity, intensity
+// colors based on templates
+#define PXS_ON PXS_GREYSCALE(PX_HARD)
+#define PXS_NOFF PXS_GREYSCALE(PX_NOFF)
+#define PXS_OFF PXS_GREYSCALE(PX_OFF)
+// full pixel definitions
+#define PXS_UNUSED      PXS_NOFF
+#define PXS_UNDERSCORE  PXS_YELLOW(PX_SOFT)
+#define PXS_DASH        PXS_BLUE(PX_SOFT)
+#define PXS_COLON       PX_NOFF, PX_SOFT, PX_SOFT
+#define PXS_SLASH       PX_SOFT, PX_NOFF, PX_SOFT
+#define PXS_TIME_BIT    PX_NOFF, PX_HARD, PX_NOFF
+#define PXS_DATE_BIT    PX_HARD, PX_NOFF, PX_NOFF
+
 // status colors
 const led_color_t LED_STATUS_COLOR_OFF      = {.r = 0, .g = 0, .b = 0};
 const led_color_t LED_STATUS_COLOR_ON       = {.r = 100, .g = 100, .b = 100};
