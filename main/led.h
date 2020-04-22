@@ -13,35 +13,35 @@
 #include "freertos/event_groups.h"
 
 #define LED_PATTERN_NAME_TEMPLATE \
-    TRANSMOG(lpat_sudden_red) \
-    TRANSMOG(lpat_sudden_green) \
-    TRANSMOG(lpat_sudden_blue) \
-    TRANSMOG(lpat_sudden_cyan) \
-    TRANSMOG(lpat_sudden_magenta) \
-    TRANSMOG(lpat_sudden_yellow) \
-    TRANSMOG(lpat_sudden_black) \
-    TRANSMOG(lpat_sudden_white) \
-    TRANSMOG(lpat_fill_red) \
-    TRANSMOG(lpat_fill_green) \
-    TRANSMOG(lpat_fill_blue) \
-    TRANSMOG(lpat_fill_cyan) \
-    TRANSMOG(lpat_fill_magenta) \
-    TRANSMOG(lpat_fill_yellow) \
-    TRANSMOG(lpat_fill_black) \
-    TRANSMOG(lpat_fill_white) \
-    TRANSMOG(lpat_fill_whyamionfirewhite) \
-    TRANSMOG(lpat_fill_auiiieeyellow) \
-    TRANSMOG(lpat_fill_whosebloodisthisred) \
-    TRANSMOG(lpat_current_time) \
-    TRANSMOG(lpat_color_showcase) \
-    TRANSMOG(lpat_brightness_gradient) \
-    TRANSMOG(lpat_status_indicators) \
-    TRANSMOG(lpat_local_time_in_unix_epoch_seconds) \
-    TRANSMOG(lpat_fade_start) \
-    TRANSMOG(lpat_fade_step) \
-    TRANSMOG(lpat_max)
+    TRANSMOG(sudden_red) \
+    TRANSMOG(sudden_green) \
+    TRANSMOG(sudden_blue) \
+    TRANSMOG(sudden_cyan) \
+    TRANSMOG(sudden_magenta) \
+    TRANSMOG(sudden_yellow) \
+    TRANSMOG(sudden_black) \
+    TRANSMOG(sudden_white) \
+    TRANSMOG(fill_red) \
+    TRANSMOG(fill_green) \
+    TRANSMOG(fill_blue) \
+    TRANSMOG(fill_cyan) \
+    TRANSMOG(fill_magenta) \
+    TRANSMOG(fill_yellow) \
+    TRANSMOG(fill_black) \
+    TRANSMOG(fill_white) \
+    TRANSMOG(fill_whyamionfirewhite) \
+    TRANSMOG(fill_auiiieeyellow) \
+    TRANSMOG(fill_whosebloodisthisred) \
+    TRANSMOG(current_time) \
+    TRANSMOG(color_showcase) \
+    TRANSMOG(brightness_gradient) \
+    TRANSMOG(status_indicators) \
+    TRANSMOG(local_time_in_unix_epoch_seconds) \
+    TRANSMOG(fade_start) \
+    TRANSMOG(fade_step) \
+    TRANSMOG(max)
 
-#define TRANSMOG(n) n,
+#define TRANSMOG(n) lpat_##n,
 typedef enum _led_pattern
 {
     LED_PATTERN_NAME_TEMPLATE
