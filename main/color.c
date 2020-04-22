@@ -1,6 +1,18 @@
 
 #include "color.h"
 
+#define TRANSMOG(X) #X,
+const char* color_name_strings[] = {
+    COLOR_NAMES
+};
+#undef TRANSMOG
+
+#define TRANSMOG(NAME, VAL) #NAME,
+const char* color_brightness_strings[] = {
+    COLOR_BRIGHTNESSES
+};
+#undef TRANSMOG
+
 /**
  * Pulled from LED example main.c
  * @brief Simple helper function, converting HSV color space to RGB color space
