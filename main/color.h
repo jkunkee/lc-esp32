@@ -85,6 +85,7 @@ typedef color_rgb_t color_rgb_pwm_t;
 
 #define COLOR_SPACES \
     TRANSMOG(cie_1931, "CIE 1931") \
+    TRANSMOG(cct, "CCT") \
     TRANSMOG(hsv, "HSV") \
     TRANSMOG(rgb, "RGB") \
 
@@ -293,3 +294,6 @@ color_rgb_t color_hsv_to_rgb(color_hsv_t);
 
 // to facilitate smooth transition effects
 color_hsv_t color_rgb_to_hsv(color_rgb_t);
+
+// make precarious assumption about enum types being interchangeable
+color_rgb_t color_enum_to_rgb(color_space, color_space, color_space, color_space);

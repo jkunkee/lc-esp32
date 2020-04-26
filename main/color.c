@@ -153,3 +153,57 @@ color_hsv_t color_rgb_to_hsv(color_rgb_t input)
 {
     return COLOR_HSV_TO_STRUCT(0, 0, 0);
 }
+
+// aggregate transforms
+
+// make precarious assumption about enum types being interchangeable
+color_rgb_t color_enum_to_rgb(color_space space, color_space a, color_space b, color_space c)
+{
+    color_rgb_t color = { 0 };
+    switch (space)
+    {
+    case color_space_cie_1931:
+        {
+            // TODO: parameter validation
+            if (color_cie_chroma_enum_max <= (unsigned)a) { }
+            color_cie_t cie = color_cie_chroma_values[a];
+            cie.lm = color_cie_luminosity_values[b];
+            color = color_cie_to_rgb(cie);
+        }
+        break;
+    case color_space_cct:
+        {
+            uint16_t temp = color_cct_temp_values[a];
+            color_component_t luminosity = color_cct_luminosity_values[b];
+            color = color_cct_to_rgb(COLOR_CCT_TO_STRUCT(temp, luminosity));
+        }
+        break;
+    case color_space_hsv:
+        {
+            uint16_t h = color_hsv_hue_values[a];
+            color_component_t s = color_hsv_sat_values[b];
+            color_component_t v = color_hsv_val_values[c];
+            color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(h, s, v));
+        }
+        break;
+    case color_space_rgb:
+        {
+            color = color_rgb_color_values[a];
+        }
+        break;
+    default:
+        color.g = 88;
+    }
+    return color;
+}
+
+
+
+
+
+
+
+
+
+
+
