@@ -52,7 +52,7 @@ typedef struct _color_cct_t {
     color_component_t lm;
 } color_cct_t;
 
-#define COLOR_CCT_TO_STRUCT(t, lm) ((color_cct_t){.t = temp, lm = lm})
+#define COLOR_CCT_TO_STRUCT(t, l) ((color_cct_t){.temp = t, .lm = l})
 
 typedef struct _color_hsv_t {
     uint16_t h;
@@ -60,7 +60,8 @@ typedef struct _color_hsv_t {
     color_component_t v;
 } color_hsv_t;
 
-#define COLOR_HSV_TO_STRUCT(h, s, v) ((color_hsv_t){.h = h, .s = s, .v = v})
+#define COLOR_HSV_TO_STRUCT(hm, sm, vm) ((color_hsv_t){.h = hm, .s = sm, .v = vm})
+#define COLOR_HSV_FROM_STRUCT(hsv) hsv.h, hsv.s, hsv.v
 
 typedef struct _color_rgb_t {
     color_component_t r;
@@ -70,7 +71,7 @@ typedef struct _color_rgb_t {
 
 typedef color_rgb_t color_rgb_pwm_t;
 
-#define COLOR_RGB_TO_STRUCT(r, g, b) ((color_rgb_t){.r = r; .g = g; .b = b})
+#define COLOR_RGB_TO_STRUCT(rm, gm, bm) ((color_rgb_t){.r = rm, .g = gm, .b = bm})
 #define COLOR_RGB_FROM_STRUCT(color) color.r, color.g, color.b
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -158,15 +159,15 @@ typedef color_rgb_t color_rgb_pwm_t;
 
 #define COLOR_RGB_BASE 120
 #define COLOR_RGB_COLORS \
-    TRANSMOG(red,     COLOR_CONDENSE_RGB(COLOR_RGB_BASE, 0, 0)) \
-    TRANSMOG(green,   COLOR_CONDENSE_RGB(0, COLOR_RGB_BASE, 0)) \
-    TRANSMOG(blue,    COLOR_CONDENSE_RGB(0, 0, COLOR_RGB_BASE)) \
-    TRANSMOG(cyan,    COLOR_CONDENSE_RGB(0, COLOR_RGB_BASE/2, COLOR_RGB_BASE/2)) \
-    TRANSMOG(magenta, COLOR_CONDENSE_RGB(COLOR_RGB_BASE/2, 0, COLOR_RGB_BASE/2)) \
-    TRANSMOG(yellow,  COLOR_CONDENSE_RGB(COLOR_RGB_BASE/2, COLOR_RGB_BASE/2, 0)) \
-    TRANSMOG(white,   COLOR_CONDENSE_RGB(COLOR_RGB_BASE/3, COLOR_RGB_BASE/3, COLOR_RGB_BASE/3)) \
-    TRANSMOG(nearly_off, COLOR_CONDENSE_RGB(1, 1, 1)) \
-    TRANSMOG(off,     COLOR_CONDENSE_RGB(0, 0, 0)) \
+    TRANSMOG(red,     COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE, 0, 0)) \
+    TRANSMOG(green,   COLOR_RGB_TO_STRUCT(0, COLOR_RGB_BASE, 0)) \
+    TRANSMOG(blue,    COLOR_RGB_TO_STRUCT(0, 0, COLOR_RGB_BASE)) \
+    TRANSMOG(cyan,    COLOR_RGB_TO_STRUCT(0, COLOR_RGB_BASE/2, COLOR_RGB_BASE/2)) \
+    TRANSMOG(magenta, COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE/2, 0, COLOR_RGB_BASE/2)) \
+    TRANSMOG(yellow,  COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE/2, COLOR_RGB_BASE/2, 0)) \
+    TRANSMOG(white,   COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE/3, COLOR_RGB_BASE/3, COLOR_RGB_BASE/3)) \
+    TRANSMOG(nearly_off, COLOR_RGB_TO_STRUCT(1, 1, 1)) \
+    TRANSMOG(off,     COLOR_RGB_TO_STRUCT(0, 0, 0)) \
 
 ///////////////////////////////////////////////////////////////////////////////
 // Useful Values
@@ -292,16 +293,3 @@ color_rgb_t color_hsv_to_rgb(color_hsv_t);
 
 // to facilitate smooth transition effects
 color_hsv_t color_rgb_to_hsv(color_rgb_t);
-
-// TODO: drop this in favor of color_hsv_to_rgb
-/**
- * Pulled from LED example main.c
- * @brief Simple helper function, converting HSV color space to RGB color space
- *
- * Wiki: https://en.wikipedia.org/wiki/HSL_and_HSV
- *
- * h = [0, 360)
- * s = [0-100]
- * v = [0-100]
- */
-void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b);

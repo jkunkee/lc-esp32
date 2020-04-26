@@ -197,11 +197,11 @@ void color_showcase()
     strip = strips[1];
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
     {
-        uint32_t r, g, b;
+        color_rgb_t color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(
+            HUE_CHUNK_SIZE * pixelIdx, 100, 10
+        ));
 
-        led_strip_hsv2rgb(HUE_CHUNK_SIZE * pixelIdx, 100, 10, &r, &g, &b);
-
-        strip->set_pixel(strip, pixelIdx, r, g, b);
+        strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(color));
 	}
     strip->refresh(strip);
 }

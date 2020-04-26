@@ -25,24 +25,52 @@ const color_component_t color_cie_luminosity_values[] = { COLOR_CIE_LUMINOSITIES
 const char* color_cie_luminosity_names[] = { COLOR_CIE_LUMINOSITIES };
 #undef TRANSMOG
 
-// TODO: Finish port
-#error This is not in a functional state.
+// CCT
+
+#define TRANSMOG(name, val) val,
+const uint16_t color_cct_temp_values[] = { COLOR_CCT_TEMPERATURES };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_cct_temp_names[] = { COLOR_CCT_TEMPERATURES };
+#undef TRANSMOG
+
+#define TRANSMOG(name, val) val,
+const color_component_t color_cct_luminosity_values[] = { COLOR_CCT_LUMINOSITIES };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_cct_luminosity_names[] = { COLOR_CCT_LUMINOSITIES };
+#undef TRANSMOG
+
 // HSV
+
+#define TRANSMOG(name, val) val,
+const uint16_t color_hsv_hue_values[] = { COLOR_HSV_HUES };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_hsv_hue_names[] = { COLOR_HSV_HUES };
+#undef TRANSMOG
+
+#define TRANSMOG(name, val) val,
+const color_component_t color_hsv_sat_values[] = { COLOR_HSV_SATURATIONS };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_hsv_sat_names[] = { COLOR_HSV_SATURATIONS };
+#undef TRANSMOG
+
+#define TRANSMOG(name, val) val,
+const color_component_t color_hsv_val_values[] = { COLOR_HSV_VALUES };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_hsv_val_names[] = { COLOR_HSV_VALUES };
+#undef TRANSMOG
 
 // RGB
 
-#define COLOR_NAMES
-#define TRANSMOG(name, value) #name,
-const char* color_name_strings[] = {
-    COLOR_NAMES
-};
+#define TRANSMOG(name, val) val,
+const color_rgb_t color_rgb_color_values[] = { COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE, 0, 0), };
 #undef TRANSMOG
-
-#define COLOR_BRIGHTNESSES
-#define TRANSMOG(NAME, VAL) #NAME,
-const char* color_brightness_strings[] = {
-    COLOR_BRIGHTNESSES
-};
+#define TRANSMOG(name, val) #name,
+const char* color_rgb_color_names[] = { COLOR_RGB_COLORS };
 #undef TRANSMOG
 
 /**
@@ -101,10 +129,27 @@ void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t
     }
 }
 
-//color_rgb_t temp_to_rgb(const uint32_t temp_in_kelvins)
-//{
-//    if (temp_in_kelvins < 1000 || 40000 < temp_in_kelvins)
-//    {
-//        return ;
-//	}
-//}
+// downconverters
+
+color_rgb_t color_cie_to_rgb(color_cie_t input)
+{
+    return COLOR_RGB_TO_STRUCT(0, 0, 0);
+}
+
+color_rgb_t color_cct_to_rgb(color_cct_t input)
+{
+    return COLOR_RGB_TO_STRUCT(0, 0, 0);
+}
+
+color_rgb_t color_hsv_to_rgb(color_hsv_t input)
+{
+    uint32_t r, g, b;
+    led_strip_hsv2rgb(COLOR_HSV_FROM_STRUCT(input), &r, &g, &b);
+    return COLOR_RGB_TO_STRUCT(r, g, b);
+}
+
+// to facilitate smooth transition effects
+color_hsv_t color_rgb_to_hsv(color_rgb_t input)
+{
+    return COLOR_HSV_TO_STRUCT(0, 0, 0);
+}
