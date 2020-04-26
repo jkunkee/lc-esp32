@@ -1,12 +1,44 @@
 
 #include "color.h"
 
-#define TRANSMOG(X) #X,
+// Create exactly one instance of these tables
+
+// Color space names
+
+#define TRANSMOG(cname, strname) strname,
+const char* color_space_names[] = { COLOR_SPACES };
+#undef TRANSMOG
+
+// CIE
+
+#define TRANSMOG(name, x, y) COLOR_CIE_TO_STRUCT(x, y, 0),
+const color_cie_t color_cie_chroma_values[] = { COLOR_CIE_CHROMAS };
+#undef TRANSMOG
+#define TRANSMOG(name, x, y) #name,
+const char* color_cie_chroma_names[] = { COLOR_CIE_CHROMAS };
+#undef TRANSMOG
+
+#define TRANSMOG(name, val) val,
+const color_component_t color_cie_luminosity_values[] = { COLOR_CIE_LUMINOSITIES };
+#undef TRANSMOG
+#define TRANSMOG(name, val) #name,
+const char* color_cie_luminosity_names[] = { COLOR_CIE_LUMINOSITIES };
+#undef TRANSMOG
+
+// TODO: Finish port
+#error This is not in a functional state.
+// HSV
+
+// RGB
+
+#define COLOR_NAMES
+#define TRANSMOG(name, value) #name,
 const char* color_name_strings[] = {
     COLOR_NAMES
 };
 #undef TRANSMOG
 
+#define COLOR_BRIGHTNESSES
 #define TRANSMOG(NAME, VAL) #NAME,
 const char* color_brightness_strings[] = {
     COLOR_BRIGHTNESSES
@@ -68,3 +100,11 @@ void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t
         break;
     }
 }
+
+//color_rgb_t temp_to_rgb(const uint32_t temp_in_kelvins)
+//{
+//    if (temp_in_kelvins < 1000 || 40000 < temp_in_kelvins)
+//    {
+//        return ;
+//	}
+//}
