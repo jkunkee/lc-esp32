@@ -157,6 +157,9 @@ typedef color_rgb_t color_rgb_pwm_t;
 #define COLOR_HSV_VALUES COLOR_COMPONENT_VALUES
 
 // Red, Green, Blue presets
+//
+// Cryhavocolor "Dogs of War" colors courtesy of
+// https://www.schlockmercenary.com/2014-12-08
 
 #define COLOR_RGB_BASE 120
 #define COLOR_RGB_COLORS \
@@ -169,6 +172,9 @@ typedef color_rgb_t color_rgb_pwm_t;
     TRANSMOG(white,   COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE/3, COLOR_RGB_BASE/3, COLOR_RGB_BASE/3)) \
     TRANSMOG(nearly_off, COLOR_RGB_TO_STRUCT(1, 1, 1)) \
     TRANSMOG(off,     COLOR_RGB_TO_STRUCT(0, 0, 0)) \
+    TRANSMOG(whyamionfirewhite,   COLOR_RGB_TO_STRUCT(COLOR_COMPONENT_MAX, COLOR_COMPONENT_MAX, COLOR_COMPONENT_MAX)) \
+    TRANSMOG(auiiieeyellow,       COLOR_RGB_TO_STRUCT(COLOR_COMPONENT_MAX, COLOR_COMPONENT_MAX, 0)) \
+    TRANSMOG(whosebloodisthisred, COLOR_RGB_TO_STRUCT(COLOR_COMPONENT_MAX, 0, 0)) \
 
 ///////////////////////////////////////////////////////////////////////////////
 // Useful Values
