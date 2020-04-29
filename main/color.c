@@ -156,8 +156,8 @@ color_hsv_t color_rgb_to_hsv(color_rgb_t input)
 
 // aggregate transforms
 
-// make precarious assumption about enum types being interchangeable
-color_rgb_t color_enum_to_rgb(color_space space, color_space a, color_space b, color_space c)
+// make precarious assumption about enum types being interchangeable and int-sized
+color_rgb_t color_enum_to_rgb(color_space space, int a, int b, int c)
 {
     color_rgb_t color = { 0 };
     switch (space)

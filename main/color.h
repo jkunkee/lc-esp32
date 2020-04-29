@@ -296,4 +296,4 @@ color_rgb_t color_hsv_to_rgb(color_hsv_t);
 color_hsv_t color_rgb_to_hsv(color_rgb_t);
 
 // make precarious assumption about enum types being interchangeable
-color_rgb_t color_enum_to_rgb(color_space, color_space, color_space, color_space);
+color_rgb_t color_enum_to_rgb(color_space, int, int, int);
