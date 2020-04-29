@@ -65,20 +65,17 @@ typedef enum _led_status_index
     led_status_MAX
 } led_status_index;
 
-typedef struct _led_color_t {
-    unsigned char r;
-    unsigned char g;
-    unsigned char b;
+// TODO: rename this sensibly, probably to led_status_t
+typedef enum _led_color_t {
+    LED_STATUS_COLOR_OFF,
+    LED_STATUS_COLOR_ON,
+    LED_STATUS_COLOR_BUSY,
+    LED_STATUS_COLOR_AQUIRING,
+    LED_STATUS_COLOR_ERROR,
+    LED_STATUS_COLOR_SUCCESS,
 } led_color_t;
 
-const extern led_color_t LED_STATUS_COLOR_OFF;
-const extern led_color_t LED_STATUS_COLOR_ON;
-const extern led_color_t LED_STATUS_COLOR_BUSY;
-const extern led_color_t LED_STATUS_COLOR_AQUIRING;
-const extern led_color_t LED_STATUS_COLOR_ERROR;
-const extern led_color_t LED_STATUS_COLOR_SUCCESS;
-
-void led_set_status_indicator(led_status_index idx, led_color_t color);
+void led_set_status_indicator(led_status_index idx, led_color_t color_id);
 
 // Configuration is a combination of hard-coded and sdkconfig.h items.
 

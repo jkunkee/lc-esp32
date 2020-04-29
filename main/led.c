@@ -32,16 +32,6 @@
 #define PXS_TIME_BIT    color_rgb_color_values[color_rgb_color_green]
 #define PXS_DATE_BIT    color_rgb_color_values[color_rgb_color_red]
 
-// status colors
-const led_color_t LED_STATUS_COLOR_OFF      = {.r = 0, .g = 0, .b = 0};
-const led_color_t LED_STATUS_COLOR_ON       = {.r = 100, .g = 100, .b = 100};
-const led_color_t LED_STATUS_COLOR_BUSY     = {.r = 100, .g = 100, .b = 0};
-const led_color_t LED_STATUS_COLOR_AQUIRING = {.r = 0, .g = 0, .b = 100};
-const led_color_t LED_STATUS_COLOR_ERROR    = {.r = 100, .g = 0, .b = 0};
-const led_color_t LED_STATUS_COLOR_SUCCESS  = {.r = 0, .g = 100, .b = 0};
-#define SPLAT_LED_COLOR_T(color_t) color_t.r, color_t.g, color_t.b
-#define CONDENSE_LED_COLOR_T(pr, pg, pb) ((const led_color_t){.r = pr, .g = pg, .b = pb})
-
 // TODO: Consider pattern-verb command structure instead of unified IDs
 
 void led_reset_status_indicators();
@@ -427,6 +417,34 @@ void show_current_time()
 #define LED_STATUS_ARRAY_SIZE (led_status_MAX+1)
 led_color_t status_bits[LED_STATUS_ARRAY_SIZE];
 
+color_rgb_t led_status_id_to_rgb(led_color_t color_id)
+{
+    color_rgb_t color;
+    switch (color_id)
+    {
+    case LED_STATUS_COLOR_OFF:
+        color = color_rgb_color_values[color_rgb_color_off];
+        break;
+    case LED_STATUS_COLOR_ON:
+        color = color_rgb_color_values[color_rgb_color_white];
+        break;
+    case LED_STATUS_COLOR_BUSY:
+        color = color_rgb_color_values[color_rgb_color_yellow];
+        break;
+    case LED_STATUS_COLOR_AQUIRING:
+        color = color_rgb_color_values[color_rgb_color_blue];
+        break;
+    default:
+    case LED_STATUS_COLOR_ERROR:
+        color = color_rgb_color_values[color_rgb_color_red];
+        break;
+    case LED_STATUS_COLOR_SUCCESS:
+        color = color_rgb_color_values[color_rgb_color_green];
+        break;
+    }
+    return color;
+}
+
 void led_reset_status_indicators()
 {
     for (int ledIdx = 0; ledIdx < LED_STATUS_ARRAY_SIZE; ledIdx++)
@@ -441,14 +459,16 @@ void led_refresh_status_indicators()
     led_strip_t* strip = strips[0];
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
     {
+        color_rgb_t color;
         if (pixelIdx <= LED_STATUS_ARRAY_SIZE)
         {
-            strip->set_pixel(strip, pixelIdx, SPLAT_LED_COLOR_T(status_bits[pixelIdx]));
+            color = led_status_id_to_rgb(status_bits[pixelIdx]);
         }
         else
         {
-            strip->set_pixel(strip, pixelIdx, SPLAT_LED_COLOR_T(LED_STATUS_COLOR_OFF));
+            color = led_status_id_to_rgb(LED_STATUS_COLOR_OFF);
         }
+        strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(color));
     }
     strip->refresh(strip);
 
@@ -461,7 +481,7 @@ void led_refresh_status_indicators()
 
 bool led_current_display_is_status = pdFALSE;
 
-void led_set_status_indicator(led_status_index idx, led_color_t color)
+void led_set_status_indicator(led_status_index idx, led_color_t color_id)
 {
     // Don't allow setting the end-of-string marker
     if (idx >= led_status_MAX)
@@ -469,7 +489,7 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
         ESP_LOGE(TAG, "Invalid LED Status Indicator index: %d > %d", idx, LED_STATUS_ARRAY_SIZE-1);
         return;
     }
-    status_bits[idx] = color;
+    status_bits[idx] = color_id;
 
     // This debugging facility needs to be coordinated with the normal path.
     xSemaphoreTake(led_semaphore, portMAX_DELAY);
