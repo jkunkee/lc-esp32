@@ -1,6 +1,9 @@
 
 #include "color.h"
 
+#include "esp_log.h"
+#define TAG "color.c"
+
 // Create exactly one instance of these tables
 
 // Color space names
@@ -193,6 +196,7 @@ color_rgb_t color_enum_to_rgb(color_space space, int a, int b, int c)
         break;
     default:
         color.g = 88;
+        ESP_LOGE(TAG, "%s: unknown color space %d", __FUNCTION__, space);
     }
     return color;
 }
