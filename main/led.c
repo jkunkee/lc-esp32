@@ -23,33 +23,14 @@
 #define LED_STRIP_COUNT 2
 #define LEDS_PER_STRIP 60
 
-// TODO replace with color.h definitions
-// color definitions
-// pixel fraction definitions
-#define PX_OFF  0
-#define PX_NOFF 1
-#define PX_SOFT 40
-#define PX_HARD 100
-// templates for common colors
-#define PXS_RED(intensity)       intensity, PX_OFF, PX_OFF
-#define PXS_GREEN(intensity)     PX_OFF, intensity, PX_OFF
-#define PXS_BLUE(intensity)      PX_OFF, PX_OFF, intensity
-#define PXS_CYAN(intensity)      PX_OFF, intensity, intensity
-#define PXS_MAGENTA(intensity)   intensity, PX_OFF, intensity
-#define PXS_YELLOW(intensity)    intensity, intensity, PX_OFF
-#define PXS_GREYSCALE(intensity) intensity, intensity, intensity
-// colors based on templates
-#define PXS_ON PXS_GREYSCALE(PX_HARD)
-#define PXS_NOFF PXS_GREYSCALE(PX_NOFF)
-#define PXS_OFF PXS_GREYSCALE(PX_OFF)
-// full pixel definitions
-#define PXS_UNUSED      PXS_NOFF
-#define PXS_UNDERSCORE  PXS_YELLOW(PX_SOFT)
-#define PXS_DASH        PXS_BLUE(PX_SOFT)
-#define PXS_COLON       PX_NOFF, PX_SOFT, PX_SOFT
-#define PXS_SLASH       PX_SOFT, PX_NOFF, PX_SOFT
-#define PXS_TIME_BIT    PX_NOFF, PX_HARD, PX_NOFF
-#define PXS_DATE_BIT    PX_HARD, PX_NOFF, PX_NOFF
+// time display pixel definitions
+#define PXS_UNUSED      COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_nearly_off])
+#define PXS_UNDERSCORE  COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_yellow])
+#define PXS_DASH        COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_blue])
+#define PXS_COLON       COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_cyan])
+#define PXS_SLASH       COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_magenta])
+#define PXS_TIME_BIT    color_rgb_color_values[color_rgb_color_green]
+#define PXS_DATE_BIT    color_rgb_color_values[color_rgb_color_red]
 
 // status colors
 const led_color_t LED_STATUS_COLOR_OFF      = {.r = 0, .g = 0, .b = 0};
@@ -184,12 +165,16 @@ void color_showcase()
     for (int set = 0; set < SETS; set++)
     {
         int ledIdx = set * LEDS_PER_SET;
-        strip->set_pixel(strip, ledIdx++, PXS_RED(STEP_SIZE * set + 1));
-        strip->set_pixel(strip, ledIdx++, PXS_GREEN(STEP_SIZE * set + 1));
-        strip->set_pixel(strip, ledIdx++, PXS_BLUE(STEP_SIZE * set + 1));
-        strip->set_pixel(strip, ledIdx++, PXS_CYAN(STEP_SIZE * set + 1));
-        strip->set_pixel(strip, ledIdx++, PXS_MAGENTA(STEP_SIZE * set + 1));
-        strip->set_pixel(strip, ledIdx++, PXS_YELLOW(STEP_SIZE * set + 1));
+        color_rgb_t color;
+
+        for (int hueIdx = 0; hueIdx < LEDS_PER_SET; hueIdx++)
+        {
+            color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(hueIdx * 60,
+                                                        color_hsv_sat_values[color_hsv_sat_ouch],
+                                                        STEP_SIZE * set + 1
+                                                        ));
+            strip->set_pixel(strip, ledIdx++, COLOR_RGB_FROM_STRUCT(color));
+        }
 	}
     strip->refresh(strip);
 
@@ -206,30 +191,30 @@ void color_showcase()
     strip->refresh(strip);
 }
 
-void set_all_rgb(int r, int g, int b)
+void set_all_rgb(color_rgb_t c)
 {
-    ESP_LOGI(TAG, "Running pattern %s r=%d g=%d b=%d", __FUNCTION__, r, g, b);
+    ESP_LOGI(TAG, "Running pattern %s r=%d g=%d b=%d", __FUNCTION__, COLOR_RGB_FROM_STRUCT(c));
     for (int stripIdx = 0; stripIdx < LED_STRIP_COUNT; stripIdx++)
     {
         led_strip_t* strip = strips[stripIdx];
         for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
         {
-            strip->set_pixel(strip, pixelIdx, r, g, b);
+            strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(c));
         }
         strip->refresh(strip);
     }
     ESP_LOGI(TAG, "Running pattern %s complete.", __FUNCTION__);
 }
 
-void fill_all_rgb(int per_pixel_delay_ms, int r, int g, int b)
+void fill_all_rgb(int per_pixel_delay_ms, color_rgb_t c)
 {
-    ESP_LOGI(TAG, "Running pattern %s T=%dms r=%d g=%d b=%d", __FUNCTION__, per_pixel_delay_ms, r, g, b);
+    ESP_LOGI(TAG, "Running pattern %s T=%dms r=%d g=%d b=%d", __FUNCTION__, per_pixel_delay_ms, COLOR_RGB_FROM_STRUCT(c));
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
     {
         for (int stripIdx = 0; stripIdx < LED_STRIP_COUNT; stripIdx++)
         {
             led_strip_t* strip = strips[stripIdx];
-            strip->set_pixel(strip, pixelIdx, r, g, b);
+            strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(c));
             strip->refresh(strip);
         }
         vTaskDelay(per_pixel_delay_ms / portTICK_PERIOD_MS);
@@ -237,7 +222,6 @@ void fill_all_rgb(int per_pixel_delay_ms, int r, int g, int b)
     ESP_LOGI(TAG, "Running pattern %s complete.", __FUNCTION__);
 }
 
-// TODO: HSV variant
 void fill_brightness_gradient(uint8_t min, uint8_t max)
 {
     uint8_t step_size = (max - min) / LEDS_PER_STRIP;
@@ -248,24 +232,28 @@ void fill_brightness_gradient(uint8_t min, uint8_t max)
         for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
         {
             char brightness = pixelIdx * step_size;
-            strip->set_pixel(strip, pixelIdx, PXS_GREYSCALE(brightness));
+            color_rgb_t grey = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(0, brightness, 10));
+            strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(grey));
         }
         strip->refresh(strip);
     }
 }
 
-void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int valueStartIdx, int r, int g, int b)
+void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int valueStartIdx, color_rgb_t color)
 {
     led_strip_t* strip = strips[stripIdx];
     for (int bitIdx = 0; bitIdx < bitCount; bitIdx++)
     {
         if ((1<<(valueStartIdx+bitIdx)) & value)
         {
-            strip->set_pixel(strip, ledStartIdx+bitIdx, r, g, b);
+            strip->set_pixel(strip, ledStartIdx+bitIdx, COLOR_RGB_FROM_STRUCT(color));
         }
         else
         {
-            strip->set_pixel(strip, ledStartIdx+bitIdx, PXS_NOFF);
+            strip->set_pixel(strip,
+                            ledStartIdx+bitIdx,
+                            COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_nearly_off])
+                            );
 		}
     }
 }
@@ -363,10 +351,11 @@ void show_current_time()
     upperStrip->set_pixel(upperStrip, currentIdx--, PXS_UNDERSCORE);
 
     // Indicate bitness
+    const uint32_t PX_SOFT = 40;
     upperStrip->set_pixel(upperStrip, 3, 0, PX_SOFT, 0);
     upperStrip->set_pixel(upperStrip, 2, 0, PX_SOFT/2, 0);
     upperStrip->set_pixel(upperStrip, 1, 0, PX_SOFT/6, 0);
-    upperStrip->set_pixel(upperStrip, 0, 0, PX_NOFF, 0);
+    upperStrip->set_pixel(upperStrip, 0, 0, 1, 0);
 
     // Show BCD date in American format on lowerStrip
 
@@ -466,7 +455,7 @@ void led_refresh_status_indicators()
     time_t now;
     time(&now);
     // N.B. Will fail with 64-bit time_t
-    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, PXS_GREEN(PX_HARD));
+    show_integer(0, sizeof(now)*8, now, LED_STATUS_ARRAY_SIZE, 0, color_rgb_color_values[color_rgb_color_green]);
     strip->refresh(strip);
 }
 
@@ -496,8 +485,8 @@ void led_set_status_indicator(led_status_index idx, led_color_t color)
 // TODO: Consider using HSV so colors stay balanced as they fade
 // TODO: Consider using color temperature https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
-static led_color_t fade_current_color = { 0 };
-static led_color_t fade_step_interval = { 0 };
+static color_rgb_t fade_current_color = { 0 };
+static color_rgb_t fade_step_interval = { 0 };
 const int FADE_STEP_COUNT = 40;
 int fade_px_delay_ms = 150;
 
@@ -515,7 +504,7 @@ void fade_start()
     ESP_ERROR_CHECK( get_setting("sleep_fade_fill_time_ms", &setting) );
     fade_px_delay_ms = (signed)setting / FADE_STEP_COUNT;
 
-    fill_all_rgb(fade_px_delay_ms, SPLAT_LED_COLOR_T(fade_current_color));
+    fill_all_rgb(fade_px_delay_ms, fade_current_color);
 
     fade_step_interval.r = fade_current_color.r / FADE_STEP_COUNT;
     fade_step_interval.g = fade_current_color.g / FADE_STEP_COUNT;
@@ -561,7 +550,7 @@ void fade_step()
     {
         fade_current_color.b = 0;
     }
-    fill_all_rgb(fade_px_delay_ms, SPLAT_LED_COLOR_T(fade_current_color));
+    fill_all_rgb(fade_px_delay_ms, fade_current_color);
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
@@ -580,63 +569,63 @@ esp_err_t led_run_sync(led_pattern_t p)
     {
     // instant color patterns
     case lpat_sudden_red:
-        set_all_rgb(PXS_RED(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_red]);
         break;
     case lpat_sudden_green:
-        set_all_rgb(PXS_GREEN(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_green]);
         break;
     case lpat_sudden_blue:
-        set_all_rgb(PXS_BLUE(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_blue]);
         break;
     case lpat_sudden_cyan:
-        set_all_rgb(PXS_CYAN(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_cyan]);
         break;
     case lpat_sudden_magenta:
-        set_all_rgb(PXS_MAGENTA(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_magenta]);
         break;
     case lpat_sudden_yellow:
-        set_all_rgb(PXS_YELLOW(PX_HARD));
+        set_all_rgb(color_rgb_color_values[color_rgb_color_yellow]);
         break;
     case lpat_sudden_black:
-        set_all_rgb(PXS_OFF);
+        set_all_rgb(color_rgb_color_values[color_rgb_color_off]);
         break;
     case lpat_sudden_white:
-        set_all_rgb(PXS_ON);
+        set_all_rgb(color_rgb_color_values[color_rgb_color_white]);
         break;
     // gradual fill patterns
     case lpat_fill_red:
-        fill_all_rgb(fill_interval_ms, PXS_RED(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_red]);
         break;
     case lpat_fill_green:
-        fill_all_rgb(fill_interval_ms, PXS_GREEN(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_green]);
         break;
     case lpat_fill_blue:
-        fill_all_rgb(fill_interval_ms, PXS_BLUE(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_blue]);
         break;
     case lpat_fill_cyan:
-        fill_all_rgb(fill_interval_ms, PXS_CYAN(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_cyan]);
         break;
     case lpat_fill_magenta:
-        fill_all_rgb(fill_interval_ms, PXS_MAGENTA(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_magenta]);
         break;
     case lpat_fill_yellow:
-        fill_all_rgb(fill_interval_ms, PXS_YELLOW(PX_HARD));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_yellow]);
         break;
     case lpat_fill_black:
-        fill_all_rgb(fill_interval_ms, PXS_OFF);
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_off]);
         break;
     case lpat_fill_white:
-        fill_all_rgb(fill_interval_ms, PXS_ON);
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_white]);
         break;
     // https://www.schlockmercenary.com/2014-12-08
     case lpat_fill_whyamionfirewhite:
-        fill_all_rgb(fill_interval_ms, PXS_GREYSCALE(255));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_whyamionfirewhite]);
         break;
     case lpat_fill_auiiieeyellow:
-        fill_all_rgb(fill_interval_ms, PXS_YELLOW(255));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_auiiieeyellow]);
         break;
     case lpat_fill_whosebloodisthisred:
-        fill_all_rgb(fill_interval_ms, PXS_RED(255));
+        fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_whosebloodisthisred]);
         break;
     // data patterns
     case lpat_current_time:
@@ -649,14 +638,16 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
         break;
+    // diagnostic patterns
     case lpat_status_indicators:
         led_refresh_status_indicators();
         break;
     case lpat_local_time_in_unix_epoch_seconds:
         localtime(&now);
-        show_integer(1, sizeof(now)*8, now, 0, 0, PXS_GREEN(PX_HARD));
+        show_integer(1, sizeof(now)*8, now, 0, 0, color_rgb_color_values[color_rgb_color_green]);
         strips[1]->refresh(strips[1]);
         break;
+    // internal patterns
     case lpat_fade_start:
         fade_start();
         break;
