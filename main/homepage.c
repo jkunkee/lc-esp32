@@ -1,8 +1,7 @@
 // To update
 // 1. delete everything after '='
 // 2. cd to this folder
-// 3. dos2unix < test.html | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' >> homepage.c
-// 4. undoctor TEST SCAFFOLDING sites
+// 3. dos2unix < test.html | grep -v "TEST SCAFFOLDING" | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' >> homepage.c
 static const char* main_page_content =
 "<html><head>\n"
 "<title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>\n"
@@ -67,18 +66,19 @@ static const char* main_page_content =
 "        // Special-case the string-based field alarm_led_pattern\n"
 "        if (setting_name === 'alarm_led_pattern') { new_settings[setting_name] = elem.selectedIndex; }\n"
 "    });\n"
-"    console.log(JSON.stringify(new_settings));\n"
 "    await fetch('/settings', {\n"
 "        method: 'POST',\n"
 "        body: JSON.stringify(new_settings),\n"
 "        headers: { 'Content-Type': 'application/json' },\n"
 "    });\n"
 "}\n"
-"setInterval(async function() {\n"
+"async function refreshTime() {\n"
 "    var time_req = await fetch('/time');\n"
 "    var time_string = await time_req.text();\n"
 "    document.getElementById('current_time').innerText = 'Current Local Time: '+time_string;\n"
-"}, 1000);\n"
+"    setTimeout(refreshTime, 1000);\n"
+"}\n"
+"refreshTime();\n"
 "document.getElementById('alarm_snooze').onclick = async function alarm_snooze() {\n"
 "    await fetch('/command?alarm_snooze=1');\n"
 "};\n"
