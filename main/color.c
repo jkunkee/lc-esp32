@@ -136,7 +136,62 @@ void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t
 
 color_rgb_t color_cie_to_rgb(color_cie_t input)
 {
-    return COLOR_RGB_TO_STRUCT(0, 0, 0);
+    // Argument validation
+    if (input.CCx < 0.0f)
+    {
+        ESP_LOGE(TAG, "%s: CCx %f less than lower bound, truncating", __FUNCTION__, input.CCx);
+        input.CCx = 0.0f;
+    }
+    if (input.CCx > 1.0f)
+    {
+        ESP_LOGE(TAG, "%s: CCx %f greater than upper bound, truncating", __FUNCTION__, input.CCx);
+        input.CCx = 1.0f;
+    }
+    if (input.CCy < 0.0f)
+    {
+        ESP_LOGE(TAG, "%s: CCx %f less than lower bound, truncating", __FUNCTION__, input.CCy);
+        input.CCy = 0.0f;
+    }
+    if (input.CCy > 1.0f)
+    {
+        ESP_LOGE(TAG, "%s: CCx %f greater than upper bound, truncating", __FUNCTION__, input.CCy);
+        input.CCy = 1.0f;
+    }
+    // all values of Y map into the interval [0,1]
+
+    // Convert xxY to XYZ
+    // http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
+    float X, Y, Z;
+    // Renormalize input.Y to a float to match x and y
+    Y = (input.CCY * 1.0f) / (color_cie_luminosity_values[color_cie_lm_max] * 1.0f);
+    // Convert the other two components
+    X = input.CCx * Y / input.CCy;
+    Z = (1.0f - input.CCx - input.CCy) * Y / input.CCy;
+
+    // Project XYZ into RGB
+    // http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.htmlj
+
+    // XYZ to linear RGB
+    // M^-1 * X,Y,Z
+    // CIE RGB M^-1 from
+    // http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
+    //  2.3706743 -0.9000405 -0.4706338
+    // -0.5138850  1.4253036  0.0885814
+    //  0.0052982 -0.0146949  1.0093968
+    float R, G, B;
+    R = X *  2.3706743f + Y * -0.9000405f + Z * -0.4706338f;
+    G = X * -0.5138850f + Y *  1.4253036f + Z *  0.0885814f;
+    B = X *  0.0052982f + Y * -0.0146949f + Z *  1.0093968f;
+
+    // Gamma is the companding method. It is applied in the LED driver.
+
+    // Reduce to integer type
+    color_rgb_t rgb;
+    rgb.r = R * COLOR_COMPONENT_MAX;
+    rgb.g = G * COLOR_COMPONENT_MAX;
+    rgb.b = B * COLOR_COMPONENT_MAX;
+
+    return rgb;
 }
 
 color_rgb_t color_cct_to_rgb(color_cct_t input)
