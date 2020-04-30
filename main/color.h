@@ -37,14 +37,15 @@ typedef uint8_t color_component_t;
 // color tuples.
 
 // CIE 1931 Chromaticity Coordinates plus luminosity
+// Represented in xyY coordinates
 typedef struct _color_cie_t {
     float CCx;
     float CCy;
-    color_component_t lm;
+    color_component_t CCY;
 } color_cie_t;
 
 // avoid repetitive typecase+brace fiddling
-#define COLOR_CIE_TO_STRUCT(x, y, l) ((color_cie_t){.CCx = x, .CCy = y, .lm = l})
+#define COLOR_CIE_TO_STRUCT(x, y, Y) ((color_cie_t){.CCx = x, .CCy = y, .CCY = Y})
 
 // Correlated Color Temperature
 typedef struct _color_cct_t {
@@ -84,7 +85,7 @@ typedef color_rgb_t color_rgb_pwm_t;
 // Color space names
 
 #define COLOR_SPACES \
-    TRANSMOG(cie_1931, "CIE 1931") \
+    TRANSMOG(cie_1931_xyY, "CIE 1931 xyY") \
     TRANSMOG(cct, "CCT") \
     TRANSMOG(hsv, "HSV") \
     TRANSMOG(rgb, "RGB") \
@@ -119,7 +120,7 @@ typedef color_rgb_t color_rgb_pwm_t;
     TRANSMOG(far_magenta_380, 0.174112257, 0.004963727) \
     TRANSMOG(achromat_E, 1.0/3.0, 1.0/3.0) \
 
-// luminosities for use with CIE CCx,CCY pairs
+// luminosities (Y of xyY) for use with CIE CCx,CCY pairs
 #define COLOR_CIE_LUMINOSITIES COLOR_COMPONENT_VALUES
 
 // Correlated Color Temperature

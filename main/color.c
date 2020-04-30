@@ -165,12 +165,12 @@ color_rgb_t color_enum_to_rgb(color_space space, int a, int b, int c)
     color_rgb_t color = { 0 };
     switch (space)
     {
-    case color_space_cie_1931:
+    case color_space_cie_1931_xyY:
         {
             // TODO: parameter validation
             if (color_cie_chroma_enum_max <= (unsigned)a) { }
             color_cie_t cie = color_cie_chroma_values[a];
-            cie.lm = color_cie_luminosity_values[b];
+            cie.CCY = color_cie_luminosity_values[b];
             color = color_cie_to_rgb(cie);
         }
         break;
