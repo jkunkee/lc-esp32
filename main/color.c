@@ -4,6 +4,8 @@
 #include "esp_log.h"
 #define TAG "color.c"
 
+#include <math.h>
+
 // Create exactly one instance of these tables
 
 // Color space names
@@ -196,7 +198,34 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
 
 color_rgb_t color_cct_to_rgb(color_cct_t input)
 {
-    return COLOR_RGB_TO_STRUCT(0, 0, 0);
+    // http://www.brucelindbloom.com/index.html?Eqn_T_to_xy.html
+    if (input.temp < 4000 || 25000 < input.temp)
+    {
+        ESP_LOGW(TAG, "%s: temperature %d out of algorithm range (4000-25000K)", __FUNCTION__, input.temp);
+    }
+
+    color_cie_t xxY;
+
+    float ccx, ccy, temp;
+
+    temp = input.temp * 1.0f;
+
+    if (temp < 7000)
+    {
+        ccx = -4.6070e9f / powf(temp, 3.0f) + 2.9678e6f / powf(temp, 2.0f) + 0.09911e3f / temp + 0.244063f;
+    }
+    else
+    {
+        ccx = -2.0064e9f / powf(temp, 3.0f) + 1.9018e6f / powf(temp, 2.0f) + 0.24748e3f / temp + 0.237040f;
+    }
+
+    ccy = -3.000f * powf(temp, 2.0f) + 2.870f * temp - 0.275f;
+
+    xxY.CCx = ccx;
+    xxY.CCy = ccy;
+    xxY.CCY = input.lm;
+
+    return color_cie_to_rgb(xxY);
 }
 
 color_rgb_t color_hsv_to_rgb(color_hsv_t input)
@@ -209,7 +238,61 @@ color_rgb_t color_hsv_to_rgb(color_hsv_t input)
 // to facilitate smooth transition effects
 color_hsv_t color_rgb_to_hsv(color_rgb_t input)
 {
-    return COLOR_HSV_TO_STRUCT(0, 0, 0);
+    color_hsv_t result;
+
+    // https://www.rapidtables.com/convert/color/rgb-to-hsv.html
+    // https://en.wikipedia.org/wiki/HSL_and_HSV
+    float rf, gf, bf;
+
+    // Scale inputs onto [0,1]
+    rf = input.r / (COLOR_COMPONENT_MAX * 1.0f);
+    gf = input.g / (COLOR_COMPONENT_MAX * 1.0f);
+    bf = input.b / (COLOR_COMPONENT_MAX * 1.0f);
+
+    // find max
+    float cmax = fmaxf(rf, fmaxf(gf, bf));
+    float cmin = fminf(rf, fminf(gf, bf));
+
+    float delta = cmax - cmin;
+
+    // Hue [0,360)
+    float hue;
+    // prevent divide-by-zero errors for greys
+    if (delta == 0.0f)
+    {
+        hue = 0;
+    }
+    else if (cmax == rf)
+    {
+        hue = fmodf((gf - bf) / delta, 6.0f);
+    }
+    else if (cmax == gf)
+    {
+        hue = (bf - rf) / delta + 2.0f;
+    }
+    else /* if (cmax == bf) */
+    {
+        hue = (rf - gf) / delta + 4.0f;
+    }
+    result.h = hue * 60.0f;
+
+    // Saturation [0,100]
+    float saturation;
+    // prevent divide-by-zero errors
+    if (cmax == 0.0f)
+    {
+        saturation = 0.0f;
+    }
+    else
+    {
+        saturation = delta / cmax;
+    }
+    result.s = saturation * 100.0f;
+
+    // Value [0,100]
+    result.v = cmax * 100.0f;
+
+    return result;
 }
 
 // aggregate transforms
