@@ -196,6 +196,23 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
     return rgb;
 }
 
+// take a float, pretend it's on [0,255], scale it onto [0,COLOR_COMPONENT_MAX],
+// clamp it, and convert it to the integer type.
+color_component_t clamp_and_scale_float_to_component_t(float val)
+{
+    float scaled = val * (COLOR_COMPONENT_MAX * 1.0f) / 255.0f;
+    float clamped = scaled;
+    if (scaled < 0.0f)
+    {
+        clamped = 0.0f;
+    }
+    if (scaled > COLOR_COMPONENT_MAX * 1.0f)
+    {
+        clamped = COLOR_COMPONENT_MAX * 1.0f;
+    }
+    return clamped;
+}
+
 color_rgb_t color_cct_to_rgb(color_cct_t input)
 {
     // http://www.brucelindbloom.com/index.html?Eqn_T_to_xy.html
@@ -226,6 +243,55 @@ color_rgb_t color_cct_to_rgb(color_cct_t input)
     xxY.CCY = input.lm;
 
     return color_cie_to_rgb(xxY);
+
+/*
+    // https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
+
+    color_rgb_t result;
+
+    float adj_temp = input.temp / 100.0f;
+    float rf, gf, bf;
+
+    // red
+    if (input.temp < 6600)
+    {
+        rf = 255.0f;
+    }
+    else
+    {
+        rf = 329.698727446f * powf(adj_temp - 60.0f, -0.1332047592f);
+    }
+
+    // green
+    if (input.temp < 6600)
+    {
+        gf = 99.4708025861f * logf(adj_temp) - 161.1195681661f;
+    }
+    else
+    {
+        gf = 288.1221695283f * powf(adj_temp - 60.0f, -0.0755148492f);
+    }
+
+    // blue
+    if (input.temp > 6500)
+    {
+        bf = 255.0f;
+    }
+    else if (input.temp < 2000)
+    {
+        bf = 0.0f;
+    }
+    else
+    {
+        bf = 138.5177615561f * logf(adj_temp - 10.0f) - 305.04479227307f;
+    }
+
+    result.r = clamp_and_scale_float_to_component_t(rf);
+    result.g = clamp_and_scale_float_to_component_t(gf);
+    result.b = clamp_and_scale_float_to_component_t(bf);
+
+    return result;
+*/
 }
 
 color_rgb_t color_hsv_to_rgb(color_hsv_t input)
