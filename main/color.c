@@ -6,6 +6,8 @@
 
 #include <math.h>
 
+#define COLOR_VERBOSE_LOGGING 0
+
 // Create exactly one instance of these tables
 
 // Color space names
@@ -312,7 +314,9 @@ color_rgb_t color_hsv_to_rgb(color_hsv_t input)
     }
 
     led_strip_hsv2rgb(h, s, v, &r, &g, &b);
+#if COLOR_VERBOSE_LOGGING
     ESP_LOGI(TAG, "%s: Converted h=%d,s=%d,v=%d to r=%d,g=%d,b=%d", __FUNCTION__, h, s, v, r, g, b);
+#endif
     return COLOR_RGB_TO_STRUCT(r, g, b);
 }
 
@@ -373,10 +377,12 @@ color_hsv_t color_rgb_to_hsv(color_rgb_t input)
     // Value [0,100]
     result.v = cmax * 100.0f;
 
+#if COLOR_VERBOSE_LOGGING
     ESP_LOGI(TAG, "%s: Converted r=%u=%f,g=%u=%f,b=%u=%f to h=%f=%u,s=%f=%u,v=%f=%u",
                     __FUNCTION__,
                     input.r, rf, input.g, gf, input.b, bf,
                     hue, result.h, saturation, result.s, cmax, result.v);
+#endif
 
     return result;
 }
