@@ -198,20 +198,20 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
 
 // take a float, pretend it's on [0,255], scale it onto [0,COLOR_COMPONENT_MAX],
 // clamp it, and convert it to the integer type.
-color_component_t clamp_and_scale_float_to_component_t(float val)
-{
-    float scaled = val * ((float)COLOR_COMPONENT_MAX) / 255.0f;
-    float clamped = scaled;
-    if (scaled < 0.0f)
-    {
-        clamped = 0.0f;
-    }
-    if (scaled > (float)COLOR_COMPONENT_MAX)
-    {
-        clamped = (float)COLOR_COMPONENT_MAX;
-    }
-    return clamped;
-}
+//color_component_t clamp_and_scale_float_to_component_t(float val)
+//{
+//    float scaled = val * ((float)COLOR_COMPONENT_MAX) / 255.0f;
+//    float clamped = scaled;
+//    if (scaled < 0.0f)
+//    {
+//        clamped = 0.0f;
+//    }
+//    if (scaled > (float)COLOR_COMPONENT_MAX)
+//    {
+//        clamped = (float)COLOR_COMPONENT_MAX;
+//    }
+//    return clamped;
+//}
 
 color_rgb_t color_cct_to_rgb(color_cct_t input)
 {
