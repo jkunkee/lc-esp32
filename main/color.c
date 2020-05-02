@@ -201,26 +201,44 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
     return rgb;
 }
 
+//#define USE_BRUCE
+
+#ifndef USE_BRUCE
 // take a float, pretend it's on [0,255], scale it onto [0,COLOR_COMPONENT_MAX],
 // clamp it, and convert it to the integer type.
-//color_component_t clamp_and_scale_float_to_component_t(float val)
-//{
-//    float scaled = val * ((float)COLOR_COMPONENT_MAX) / 255.0f;
-//    float clamped = scaled;
-//    if (scaled < 0.0f)
-//    {
-//        clamped = 0.0f;
-//    }
-//    if (scaled > (float)COLOR_COMPONENT_MAX)
-//    {
-//        clamped = (float)COLOR_COMPONENT_MAX;
-//    }
-//    return clamped;
-//}
+color_component_t clamp_and_scale_float_to_component_t(float val, color_component_t lm)
+{
+    // Map [0,255] onto [0,COLOR_COMPONENT_MAX]
+    float scaled = val * ((float)COLOR_COMPONENT_MAX) / 255.0f;
+
+    // Scale by lm/COLOR_COMPONENT_MAX
+    float enluminositified = scaled;
+    enluminositified = scaled * (float)lm / (float)COLOR_COMPONENT_MAX;
+
+    // Clamp to [0,COLOR_COMPONENT_MAX]
+    float clamped = enluminositified;
+    if (clamped < 0.0f)
+    {
+        clamped = 0.0f;
+    }
+    if (clamped > (float)COLOR_COMPONENT_MAX)
+    {
+        clamped = (float)COLOR_COMPONENT_MAX;
+    }
+
+    // convert float to integer type color_component_t
+    return clamped;
+}
+#endif
 
 color_rgb_t color_cct_to_rgb(color_cct_t input)
 {
+    color_rgb_t result;
+
+#ifdef USE_BRUCE
     // http://www.brucelindbloom.com/index.html?Eqn_T_to_xy.html
+    // I do not think this means what I think it means.
+
     if (input.temp < 4000 || 25000 < input.temp)
     {
         ESP_LOGW(TAG, "%s: temperature %d out of algorithm range (4000-25000K)", __FUNCTION__, input.temp);
@@ -241,18 +259,22 @@ color_rgb_t color_cct_to_rgb(color_cct_t input)
         ccx = -2.0064e9f / powf(temp, 3.0f) + 1.9018e6f / powf(temp, 2.0f) + 0.24748e3f / temp + 0.237040f;
     }
 
-    ccy = -3.000f * powf(temp, 2.0f) + 2.870f * temp - 0.275f;
+    ccy = -3.000f * powf(ccx, 2.0f) + 2.870f * ccx - 0.275f;
 
     xxY.CCx = ccx;
     xxY.CCy = ccy;
     xxY.CCY = input.lm;
 
-    return color_cie_to_rgb(xxY);
+    result = color_cie_to_rgb(xxY);
 
-/*
+#else
+
     // https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
-    color_rgb_t result;
+    if (input.temp < 1000 || 10000 < input.temp)
+    {
+        ESP_LOGW(TAG, "%s: temperature %d out of algorithm range (4000-25000K)", __FUNCTION__, input.temp);
+    }
 
     float adj_temp = input.temp / 100.0f;
     float rf, gf, bf;
@@ -291,12 +313,20 @@ color_rgb_t color_cct_to_rgb(color_cct_t input)
         bf = 138.5177615561f * logf(adj_temp - 10.0f) - 305.04479227307f;
     }
 
-    result.r = clamp_and_scale_float_to_component_t(rf);
-    result.g = clamp_and_scale_float_to_component_t(gf);
-    result.b = clamp_and_scale_float_to_component_t(bf);
+    result.r = clamp_and_scale_float_to_component_t(rf, input.lm);
+    result.g = clamp_and_scale_float_to_component_t(gf, input.lm);
+    result.b = clamp_and_scale_float_to_component_t(bf, input.lm);
+#endif
+
+#if COLOR_VERBOSE_LOGGING
+    ESP_LOGI(TAG, "%s: converted t=%u,lm=%u to r=%u,g=%u,b=%u",
+                    __FUNCTION__,
+                    input.temp, input.lm,
+                    result.r, result.g, result.b
+                    );
+#endif
 
     return result;
-*/
 }
 
 color_rgb_t color_hsv_to_rgb(color_hsv_t input)

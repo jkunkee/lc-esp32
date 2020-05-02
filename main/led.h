@@ -35,6 +35,7 @@
     TRANSMOG(current_time) \
     TRANSMOG(color_showcase) \
     TRANSMOG(brightness_gradient) \
+    TRANSMOG(demo_cct) \
     TRANSMOG(status_indicators) \
     TRANSMOG(local_time_in_unix_epoch_seconds) \
     TRANSMOG(fade_start) \

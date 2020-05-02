@@ -549,6 +549,41 @@ void fade_step()
     fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(current_color));
 }
 
+void demo_cct(void)
+{
+    set_all_rgb(color_rgb_color_values[color_rgb_color_off]);
+
+    int ledIdx;
+    led_strip_t *strip;
+
+    // string 0 demos the temp presets
+    ledIdx = 0;
+    strip = strips[0];
+    color_rgb_t color;
+    for (color_cct_temp tempId = 0; tempId < color_cct_temp_enum_max; tempId++)
+    {
+        color_cct_t temp;
+        temp.temp = color_cct_temp_values[tempId];
+        temp.lm = color_cct_luminosity_values[color_cct_lm_high];
+        color = color_cct_to_rgb(temp);
+        strip->set_pixel(strip, ledIdx++, COLOR_RGB_FROM_STRUCT(color));
+	}
+    strip->refresh(strip);
+
+    // string 1 demos the luminosity presets
+    ledIdx = 0;
+    strip = strips[1];
+    for (color_cct_luminosity lmIdx = 0; lmIdx < color_cct_lm_enum_max; lmIdx++)
+    {
+        color_cct_t temp;
+        temp.temp = color_cct_temp_values[color_cct_temp_warm_2500];
+        temp.lm = color_cct_luminosity_values[lmIdx];
+        color = color_cct_to_rgb(temp);
+        strip->set_pixel(strip, ledIdx++, COLOR_RGB_FROM_STRUCT(color));
+	}
+    strip->refresh(strip);
+}
+
 esp_err_t led_run_sync(led_pattern_t p)
 {
     esp_err_t retVal = ESP_OK;
@@ -633,6 +668,9 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
+        break;
+    case lpat_demo_cct:
+        demo_cct();
         break;
     // diagnostic patterns
     case lpat_status_indicators:
