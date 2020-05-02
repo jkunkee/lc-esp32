@@ -72,7 +72,7 @@ const char* color_hsv_val_names[] = { COLOR_HSV_VALUES };
 // RGB
 
 #define TRANSMOG(name, val) val,
-const color_rgb_t color_rgb_color_values[] = { COLOR_RGB_TO_STRUCT(COLOR_RGB_BASE, 0, 0), };
+const color_rgb_t color_rgb_color_values[] = { COLOR_RGB_COLORS };
 #undef TRANSMOG
 #define TRANSMOG(name, val) #name,
 const char* color_rgb_color_names[] = { COLOR_RGB_COLORS };
