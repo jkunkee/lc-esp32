@@ -55,17 +55,17 @@ const uint16_t color_hsv_hue_values[] = { COLOR_HSV_HUES };
 const char* color_hsv_hue_names[] = { COLOR_HSV_HUES };
 #undef TRANSMOG
 
-#define TRANSMOG(name, val) val,
+#define TRANSMOG(nameval) nameval,
 const color_component_t color_hsv_sat_values[] = { COLOR_HSV_SATURATIONS };
 #undef TRANSMOG
-#define TRANSMOG(name, val) #name,
+#define TRANSMOG(nameval) #nameval,
 const char* color_hsv_sat_names[] = { COLOR_HSV_SATURATIONS };
 #undef TRANSMOG
 
-#define TRANSMOG(name, val) val,
+#define TRANSMOG(nameval) nameval,
 const color_component_t color_hsv_val_values[] = { COLOR_HSV_VALUES };
 #undef TRANSMOG
-#define TRANSMOG(name, val) #name,
+#define TRANSMOG(nameval) #nameval,
 const char* color_hsv_val_names[] = { COLOR_HSV_VALUES };
 #undef TRANSMOG
 
@@ -84,9 +84,12 @@ const char* color_rgb_color_names[] = { COLOR_RGB_COLORS };
  *
  * Wiki: https://en.wikipedia.org/wiki/HSL_and_HSV
  *
- * h = [0, 360)
- * s = [0-100]
- * v = [0-100]
+ * h = [0,360)
+ * s = [0,100]
+ * v = [0,100]
+ * r = [0,255]
+ * g = [0,255]
+ * b = [0,255]
  */
 void led_strip_hsv2rgb(uint32_t h, uint32_t s, uint32_t v, uint32_t *r, uint32_t *g, uint32_t *b)
 {

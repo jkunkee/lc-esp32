@@ -151,11 +151,19 @@ typedef color_rgb_t color_rgb_pwm_t;
 
 // Saturation
 // Values here on [0-COLOR_COMPONENT_MAX] map to [0.0-1.0]
-#define COLOR_HSV_SATURATIONS COLOR_COMPONENT_VALUES
+#define COLOR_HSV_SATURATIONS \
+    TRANSMOG(0) \
+    TRANSMOG(1) \
+    TRANSMOG(20) \
+    TRANSMOG(40) \
+    TRANSMOG(50) \
+    TRANSMOG(60) \
+    TRANSMOG(80) \
+    TRANSMOG(100) \
 
 // Value
 // This uses the simplest definition of value: the arithmetic mean of RGB
-#define COLOR_HSV_VALUES COLOR_COMPONENT_VALUES
+#define COLOR_HSV_VALUES COLOR_HSV_SATURATIONS
 
 // Red, Green, Blue presets
 //
@@ -256,7 +264,7 @@ typedef enum _color_hsv_hue
 extern const uint16_t color_hsv_hue_values[];
 extern const char* color_hsv_hue_names[];
 
-#define TRANSMOG(name, value) color_hsv_sat_##name,
+#define TRANSMOG(nameval) color_hsv_sat_##nameval,
 typedef enum _color_hsv_sat
 {
     COLOR_HSV_SATURATIONS
@@ -267,7 +275,7 @@ typedef enum _color_hsv_sat
 extern const color_component_t color_hsv_sat_values[];
 extern const char* color_hsv_sat_names[];
 
-#define TRANSMOG(name, value) color_hsv_val_##name,
+#define TRANSMOG(nameval) color_hsv_val_##nameval,
 typedef enum _color_hsv_val
 {
     COLOR_HSV_VALUES

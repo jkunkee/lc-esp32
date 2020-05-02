@@ -160,7 +160,7 @@ void color_showcase()
         for (int hueIdx = 0; hueIdx < LEDS_PER_SET; hueIdx++)
         {
             color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(hueIdx * 60,
-                                                        color_hsv_sat_values[color_hsv_sat_ouch],
+                                                        color_hsv_sat_values[color_hsv_sat_100],
                                                         STEP_SIZE * set + 1
                                                         ));
             strip->set_pixel(strip, ledIdx++, COLOR_RGB_FROM_STRUCT(color));
@@ -173,7 +173,7 @@ void color_showcase()
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
     {
         color_rgb_t color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(
-            HUE_CHUNK_SIZE * pixelIdx, 100, 10
+            HUE_CHUNK_SIZE * pixelIdx, color_hsv_sat_100, color_hsv_val_100
         ));
 
         strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(color));
