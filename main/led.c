@@ -148,12 +148,14 @@ void color_showcase()
 {
     led_strip_t* strip = strips[0];
     const int LEDS_PER_SET = 6;
-    const int MAX_INTENSITY = 60;
+    const int MAX_INTENSITY = 70;
     const int SETS = LEDS_PER_STRIP / LEDS_PER_SET;
     const int STEP_SIZE = MAX_INTENSITY / SETS;
 
+    // One strip demos the fully saturated primaries+secondaries across values (brightnesses)
     for (int set = 0; set < SETS; set++)
     {
+        // Base index along the strip of the current set
         int ledIdx = set * LEDS_PER_SET;
         color_rgb_t color;
 
@@ -168,6 +170,7 @@ void color_showcase()
 	}
     strip->refresh(strip);
 
+    // Another strip demos as many continuous colors as possible
     const int HUE_CHUNK_SIZE = 359 / LEDS_PER_STRIP;
     strip = strips[1];
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
