@@ -505,72 +505,48 @@ void led_set_status_indicator(led_status_index idx, led_color_t color_id)
 // TODO: Consider using HSV so colors stay balanced as they fade
 // TODO: Consider using color temperature https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
-static color_rgb_t fade_current_color = { 0 };
-static color_rgb_t fade_step_interval = { 0 };
+static color_hsv_t fade_current_color = { 0 };
+static color_hsv_t fade_step_interval = { 0 };
 const int FADE_STEP_COUNT = 40;
 int fade_px_delay_ms = 150;
 
 void fade_start()
 {
     uint32_t setting;
+    color_rgb_t start_rgb;
 
     ESP_ERROR_CHECK( get_setting("sleep_fade_start_r", &setting) );
-    fade_current_color.r = (uint8_t)setting;
+    start_rgb.r = (color_component_t)setting;
     ESP_ERROR_CHECK( get_setting("sleep_fade_start_g", &setting) );
-    fade_current_color.g = (uint8_t)setting;
+    start_rgb.g = (color_component_t)setting;
     ESP_ERROR_CHECK( get_setting("sleep_fade_start_b", &setting) );
-    fade_current_color.b = (uint8_t)setting;
+    start_rgb.b = (color_component_t)setting;
 
     ESP_ERROR_CHECK( get_setting("sleep_fade_fill_time_ms", &setting) );
     fade_px_delay_ms = (signed)setting / FADE_STEP_COUNT;
 
-    fill_all_rgb(fade_px_delay_ms, fade_current_color);
+    fade_current_color = color_rgb_to_hsv(start_rgb);
+    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_current_color));
 
-    fade_step_interval.r = fade_current_color.r / FADE_STEP_COUNT;
-    fade_step_interval.g = fade_current_color.g / FADE_STEP_COUNT;
-    fade_step_interval.b = fade_current_color.b / FADE_STEP_COUNT;
+    fade_step_interval.v = fade_current_color.v / FADE_STEP_COUNT;
     // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
-    if ((fade_current_color.r % FADE_STEP_COUNT) > fade_step_interval.r)
+    if ((fade_current_color.v % FADE_STEP_COUNT) > fade_step_interval.v)
     {
-        fade_step_interval.r += 1;
-	}
-    if ((fade_current_color.g % FADE_STEP_COUNT) > fade_step_interval.g)
-    {
-        fade_step_interval.g += 1;
-	}
-    if ((fade_current_color.b % FADE_STEP_COUNT) > fade_step_interval.b)
-    {
-        fade_step_interval.b += 1;
+        fade_step_interval.v += 1;
 	}
 }
 
 void fade_step()
 {
-    if (fade_current_color.r >= fade_step_interval.r)
+    if (fade_current_color.v >= fade_step_interval.v)
     {
-        fade_current_color.r -= fade_step_interval.r;
+        fade_current_color.v -= fade_step_interval.v;
     }
     else
     {
-        fade_current_color.r = 0;
+        fade_current_color.v = 0;
     }
-    if (fade_current_color.g >= fade_step_interval.g)
-    {
-        fade_current_color.g -= fade_step_interval.g;
-    }
-    else
-    {
-        fade_current_color.g = 0;
-    }
-    if (fade_current_color.b >= fade_step_interval.b)
-    {
-        fade_current_color.b -= fade_step_interval.b;
-    }
-    else
-    {
-        fade_current_color.b = 0;
-    }
-    fill_all_rgb(fade_px_delay_ms, fade_current_color);
+    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_current_color));
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
