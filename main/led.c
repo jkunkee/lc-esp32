@@ -148,7 +148,7 @@ void color_showcase()
 {
     led_strip_t* strip = strips[0];
     const int LEDS_PER_SET = 6;
-    const int MAX_INTENSITY = 70;
+    const int MAX_INTENSITY = color_hsv_val_values[color_hsv_val_60];
     const int SETS = LEDS_PER_STRIP / LEDS_PER_SET;
     const int STEP_SIZE = MAX_INTENSITY / SETS;
 
@@ -176,7 +176,7 @@ void color_showcase()
     for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
     {
         color_rgb_t color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(
-            HUE_CHUNK_SIZE * pixelIdx, color_hsv_sat_100, color_hsv_val_100
+            HUE_CHUNK_SIZE * pixelIdx, color_hsv_sat_values[color_hsv_sat_100], color_hsv_val_values[color_hsv_val_100]
         ));
 
         strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(color));
