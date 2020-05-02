@@ -30,7 +30,7 @@ typedef uint8_t color_component_t;
 
 // Maximum value of color_component_t for convenience
 
-#define COLOR_COMPONENT_MAX (((color_component_t)(0))-((color_component_t)1))
+#define COLOR_COMPONENT_MAX ((color_component_t)(((color_component_t)(0))-((color_component_t)1)))
 
 ///////////////////////////////////////////////////////////////////////////////
 // Each input color space and processing layer needs a consistent way to store
