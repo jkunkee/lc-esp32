@@ -297,7 +297,19 @@ color_rgb_t color_cct_to_rgb(color_cct_t input)
 color_rgb_t color_hsv_to_rgb(color_hsv_t input)
 {
     uint32_t r, g, b;
-    led_strip_hsv2rgb(COLOR_HSV_FROM_STRUCT(input), &r, &g, &b);
+    uint32_t h, s, v;
+
+    h = input.h;
+    s = input.s;
+    v = input.v;
+
+    if (h > 359 || s > 100 || v > 100)
+    {
+        ESP_LOGE(TAG, "%s: Value out of range! h=%d,s=%d,v=%d", __FUNCTION__, h, s, v);
+    }
+
+    led_strip_hsv2rgb(h, s, v, &r, &g, &b);
+    ESP_LOGI(TAG, "%s: Converted h=%d,s=%d,v=%d to r=%d,g=%d,b=%d", __FUNCTION__, h, s, v, r, g, b);
     return COLOR_RGB_TO_STRUCT(r, g, b);
 }
 
@@ -357,6 +369,11 @@ color_hsv_t color_rgb_to_hsv(color_rgb_t input)
 
     // Value [0,100]
     result.v = cmax * 100.0f;
+
+    ESP_LOGI(TAG, "%s: Converted r=%u=%f,g=%u=%f,b=%u=%f to h=%f=%u,s=%f=%u,v=%f=%u",
+                    __FUNCTION__,
+                    input.r, rf, input.g, gf, input.b, bf,
+                    hue, result.h, saturation, result.s, cmax, result.v);
 
     return result;
 }
