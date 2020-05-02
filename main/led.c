@@ -130,7 +130,7 @@ esp_err_t led_init(void)
     {
         vEventGroupDelete(led_init_task_event);
         return ESP_FAIL;
-	}
+    }
 
     xEventGroupWaitBits(led_init_task_event,
         BIT0,
@@ -167,7 +167,7 @@ void color_showcase()
                                                         ));
             strip->set_pixel(strip, ledIdx++, COLOR_RGB_FROM_STRUCT(color));
         }
-	}
+    }
     strip->refresh(strip);
 
     // Another strip demos as many continuous colors as possible
@@ -180,7 +180,7 @@ void color_showcase()
         ));
 
         strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(color));
-	}
+    }
     strip->refresh(strip);
 }
 
@@ -247,7 +247,7 @@ void show_integer(int stripIdx, int bitCount, int value, int ledStartIdx, int va
                             ledStartIdx+bitIdx,
                             COLOR_RGB_FROM_STRUCT(color_rgb_color_values[color_rgb_color_nearly_off])
                             );
-		}
+        }
     }
 }
 
@@ -257,7 +257,7 @@ uint32_t int_to_bcd(uint32_t val)
     {
         ESP_LOGE(TAG, "int value %d exceeds BCD max of 99999999", val);
         return -1;
-	}
+    }
     // Inspired by https://stackoverflow.com/questions/1408361/unsigned-integer-to-bcd-conversion
     uint32_t result = 0;
     result += val % 10;
@@ -281,7 +281,7 @@ void show_current_time()
     {
         upperStrip->set_pixel(upperStrip, ledIdx, PXS_UNUSED);
         lowerStrip->set_pixel(lowerStrip, ledIdx, PXS_UNUSED);
-	}
+    }
     // Get the time
     time_t now;
     time(&now);
@@ -536,7 +536,7 @@ void fade_start()
     if ((fade_current_color.v % FADE_STEP_COUNT) > fade_step_interval.v)
     {
         fade_step_interval.v += 1;
-	}
+    }
 }
 
 void fade_step()
