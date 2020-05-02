@@ -505,13 +505,12 @@ void led_set_status_indicator(led_status_index idx, led_color_t color_id)
 
 // TODO: Consider fading in/out based on bool setting
 // TODO: Consider fading from A to B based on a new color enum setting
-// TODO: Consider using HSV so colors stay balanced as they fade
 // TODO: Consider using color temperature https://tannerhelland.com/2012/09/18/convert-temperature-rgb-algorithm-code.html
 
-static color_hsv_t fade_current_color = { 0 };
-static color_hsv_t fade_step_interval = { 0 };
+static color_hsv_t fade_start_color = { 0 };
+static int fade_step_counter = 0;
 const int FADE_STEP_COUNT = 40;
-int fade_px_delay_ms = 150;
+static int fade_px_delay_ms = 150;
 
 void fade_start()
 {
@@ -528,28 +527,26 @@ void fade_start()
     ESP_ERROR_CHECK( get_setting("sleep_fade_fill_time_ms", &setting) );
     fade_px_delay_ms = (signed)setting / FADE_STEP_COUNT;
 
-    fade_current_color = color_rgb_to_hsv(start_rgb);
-    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_current_color));
+    fade_start_color = color_rgb_to_hsv(start_rgb);
+    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_start_color));
 
-    fade_step_interval.v = fade_current_color.v / FADE_STEP_COUNT;
-    // round up to ensure FADE_STEP_COUNT calls to fade_step will make it to zero
-    if ((fade_current_color.v % FADE_STEP_COUNT) > fade_step_interval.v)
-    {
-        fade_step_interval.v += 1;
-    }
+    fade_step_counter = 0;
 }
 
 void fade_step()
 {
-    if (fade_current_color.v >= fade_step_interval.v)
+    color_hsv_t current_color = fade_start_color;
+
+    if (fade_step_counter < FADE_STEP_COUNT)
     {
-        fade_current_color.v -= fade_step_interval.v;
+        current_color.v = fade_start_color.v * (FADE_STEP_COUNT - fade_step_counter++) / FADE_STEP_COUNT;
     }
     else
     {
-        fade_current_color.v = 0;
+        current_color.v = 0;
     }
-    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_current_color));
+
+    fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(current_color));
 }
 
 esp_err_t led_run_sync(led_pattern_t p)
