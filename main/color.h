@@ -111,14 +111,14 @@ typedef color_rgb_t color_rgb_pwm_t;
 // Another good resource is http://hyperphysics.phy-astr.gsu.edu/hbase/vision/cie.html
 // TRANSMOG(name, CCx, CCy)
 #define COLOR_CIE_CHROMAS \
-    TRANSMOG(far_red_770, 0.734701097, 0.265298903) \
-    TRANSMOG(red_650, 0.725992318, 0.274007682) \
-    TRANSMOG(yellow_575, 0.478774791, 0.520202307) \
-    TRANSMOG(green_510, 0.013870246, 0.750186428) \
-    TRANSMOG(cyan_490, 0.045390735, 0.294975965) \
-    TRANSMOG(blue_477, 0.102775863, 0.102863739) \
-    TRANSMOG(far_magenta_380, 0.174112257, 0.004963727) \
-    TRANSMOG(achromat_E, 1.0/3.0, 1.0/3.0) \
+    TRANSMOG(far_red_770, 0.734701097f, 0.265298903f) \
+    TRANSMOG(red_650, 0.725992318f, 0.274007682f) \
+    TRANSMOG(yellow_575, 0.478774791f, 0.520202307f) \
+    TRANSMOG(green_510, 0.013870246f, 0.750186428f) \
+    TRANSMOG(cyan_490, 0.045390735f, 0.294975965f) \
+    TRANSMOG(blue_477, 0.102775863f, 0.102863739f) \
+    TRANSMOG(far_magenta_380, 0.174112257f, 0.004963727f) \
+    TRANSMOG(achromat_E, 1.0f/3.0f, 1.0f/3.0f) \
 
 // luminosities (Y of xyY) for use with CIE CCx,CCY pairs
 #define COLOR_CIE_LUMINOSITIES COLOR_COMPONENT_VALUES

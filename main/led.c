@@ -549,6 +549,40 @@ void fade_step()
     fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(current_color));
 }
 
+void demo_cie(void)
+{
+    color_cie_t cie;
+    color_rgb_t result;
+    int pixelIdx = 0;
+
+    for (int lmIdx = 0; lmIdx < color_cie_lm_enum_max; lmIdx++)
+    {
+        color_component_t CCY = color_cie_luminosity_values[lmIdx];
+        for (int colorIdx = 0; colorIdx < color_cie_chroma_enum_max; colorIdx++)
+        {
+            cie = color_cie_chroma_values[colorIdx];
+            cie.CCY = CCY;
+            result = color_cie_to_rgb(cie);
+            strips[0]->set_pixel(strips[0], pixelIdx++, COLOR_RGB_FROM_STRUCT(result));
+		}
+	}
+    strips[0]->refresh(strips[0]);
+
+    pixelIdx = 0;
+        for (int colorIdx = 0; colorIdx < color_cie_chroma_enum_max; colorIdx++)
+        {
+    for (int lmIdx = 0; lmIdx < color_cie_lm_enum_max; lmIdx++)
+    {
+        color_component_t CCY = color_cie_luminosity_values[lmIdx];
+            cie = color_cie_chroma_values[colorIdx];
+            cie.CCY = CCY;
+            result = color_cie_to_rgb(cie);
+            strips[1]->set_pixel(strips[1], pixelIdx++, COLOR_RGB_FROM_STRUCT(result));
+		}
+	}
+    strips[1]->refresh(strips[1]);
+}
+
 void demo_cct(void)
 {
     set_all_rgb(color_rgb_color_values[color_rgb_color_off]);
@@ -668,6 +702,9 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_brightness_gradient:
         fill_brightness_gradient(0, 255);
+        break;
+    case lpat_demo_cie:
+        demo_cie();
         break;
     case lpat_demo_cct:
         demo_cct();
