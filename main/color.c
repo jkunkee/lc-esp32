@@ -165,7 +165,7 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
     // http://www.brucelindbloom.com/index.html?Eqn_xyY_to_XYZ.html
     float X, Y, Z;
     // Renormalize input.Y to a float to match x and y
-    Y = (input.CCY * 1.0f) / (color_cie_luminosity_values[color_cie_lm_max] * 1.0f);
+    Y = ((float)(input.CCY)) / ((float)(color_cie_luminosity_values[color_cie_lm_max]));
     // Convert the other two components
     X = input.CCx * Y / input.CCy;
     Z = (1.0f - input.CCx - input.CCy) * Y / input.CCy;
@@ -200,15 +200,15 @@ color_rgb_t color_cie_to_rgb(color_cie_t input)
 // clamp it, and convert it to the integer type.
 color_component_t clamp_and_scale_float_to_component_t(float val)
 {
-    float scaled = val * (COLOR_COMPONENT_MAX * 1.0f) / 255.0f;
+    float scaled = val * ((float)COLOR_COMPONENT_MAX) / 255.0f;
     float clamped = scaled;
     if (scaled < 0.0f)
     {
         clamped = 0.0f;
     }
-    if (scaled > COLOR_COMPONENT_MAX * 1.0f)
+    if (scaled > (float)COLOR_COMPONENT_MAX)
     {
-        clamped = COLOR_COMPONENT_MAX * 1.0f;
+        clamped = (float)COLOR_COMPONENT_MAX;
     }
     return clamped;
 }
@@ -225,7 +225,7 @@ color_rgb_t color_cct_to_rgb(color_cct_t input)
 
     float ccx, ccy, temp;
 
-    temp = input.temp * 1.0f;
+    temp = (float)(input.temp);
 
     if (temp < 7000)
     {
@@ -311,9 +311,9 @@ color_hsv_t color_rgb_to_hsv(color_rgb_t input)
     float rf, gf, bf;
 
     // Scale inputs onto [0,1]
-    rf = input.r / (COLOR_COMPONENT_MAX * 1.0f);
-    gf = input.g / (COLOR_COMPONENT_MAX * 1.0f);
-    bf = input.b / (COLOR_COMPONENT_MAX * 1.0f);
+    rf = (float)(input.r) / ((float)COLOR_COMPONENT_MAX);
+    gf = (float)(input.g) / ((float)COLOR_COMPONENT_MAX);
+    bf = (float)(input.b) / ((float)COLOR_COMPONENT_MAX);
 
     // find max
     float cmax = fmaxf(rf, fmaxf(gf, bf));
