@@ -225,7 +225,7 @@ void fill_brightness_gradient(uint8_t min, uint8_t max)
         for (int pixelIdx = 0; pixelIdx < LEDS_PER_STRIP; pixelIdx++)
         {
             char brightness = pixelIdx * step_size;
-            color_rgb_t grey = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(0, brightness, 10));
+            color_rgb_t grey = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(0, 0, brightness));
             strip->set_pixel(strip, pixelIdx, COLOR_RGB_FROM_STRUCT(grey));
         }
         strip->refresh(strip);
@@ -700,7 +700,7 @@ esp_err_t led_run_sync(led_pattern_t p)
         color_showcase();
         break;
     case lpat_brightness_gradient:
-        fill_brightness_gradient(0, 255);
+        fill_brightness_gradient(0, 100);
         break;
     case lpat_demo_cie:
         demo_cie();
