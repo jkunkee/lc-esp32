@@ -515,19 +515,18 @@ static int fade_px_delay_ms = 150;
 void fade_start()
 {
     uint32_t setting;
-    color_rgb_t start_rgb;
+    color_cct_t temperature;
 
-    ESP_ERROR_CHECK( get_setting("sleep_fade_start_r", &setting) );
-    start_rgb.r = (color_component_t)setting;
-    ESP_ERROR_CHECK( get_setting("sleep_fade_start_g", &setting) );
-    start_rgb.g = (color_component_t)setting;
-    ESP_ERROR_CHECK( get_setting("sleep_fade_start_b", &setting) );
-    start_rgb.b = (color_component_t)setting;
+    ESP_ERROR_CHECK( get_setting("sleep_fade_start_temp", &setting) );
+    temperature.temp = (uint16_t)setting;
+    ESP_ERROR_CHECK( get_setting("sleep_fade_start_luminosity", &setting) );
+    temperature.lm = (color_component_t)setting;
 
     ESP_ERROR_CHECK( get_setting("sleep_fade_fill_time_ms", &setting) );
     fade_px_delay_ms = (signed)setting / FADE_STEP_COUNT;
 
-    fade_start_color = color_rgb_to_hsv(start_rgb);
+    color_rgb_t rgb = color_cct_to_rgb(temperature);
+    fade_start_color = color_rgb_to_hsv(rgb);
     fill_all_rgb(fade_px_delay_ms, color_hsv_to_rgb(fade_start_color));
 
     fade_step_counter = 0;

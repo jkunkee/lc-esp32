@@ -20,9 +20,8 @@ typedef enum _settings_name
     // Sleep mode settings
     sleep_delay_min,
     sleep_fade_time_min,
-    sleep_fade_start_r,
-    sleep_fade_start_g,
-    sleep_fade_start_b,
+    sleep_fade_start_temp,
+    sleep_fade_start_luminosity,
     sleep_fade_fill_time_ms,
 
     // Color pattern settings
