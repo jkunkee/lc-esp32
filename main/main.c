@@ -260,7 +260,7 @@ void app_main(void)
 
     //initialize service
     ESP_ERROR_CHECK( mdns_service_add("LightClock-WebServer", "_http", "_tcp", 80, serviceTxtData, LWIP_ARRAYSIZE(serviceTxtData)) );
-    ESP_LOGI(TAG, "Initializing mDNS respond complete.");
+    ESP_LOGI(TAG, "Initializing mDNS responder complete.");
     led_set_status_indicator(led_status_mdns, LED_STATUS_COLOR_SUCCESS);
 
     // Set up the Simple NTP (SNTP) client
@@ -295,7 +295,7 @@ void app_main(void)
     {
         lc_state next_state = current_state;
 
-        ESP_LOGI(TAG, "Loop #%u of main loop", ++switch_count);
+        ESP_LOGI(TAG, "Loop #%u of main loop, state %d", ++switch_count, current_state);
 
         switch (current_state)
         {
