@@ -27,19 +27,19 @@ config LC_WIFI_PASSWORD
 
 config LC_LED_STRIP_1_DATA_PIN
     int "LED Strip 1 Data Pin"
-    default 18
+    default 12
     help
 	GPIO pin number connected to LED strip 1's Data pin
 
 config LC_LED_STRIP_2_DATA_PIN
     int "LED Strip 2 Data Pin"
-    default 19
+    default 13
     help
 	GPIO pin number connected to LED strip 2's Data pin
 
 config LC_HTTP_SETTINGS_BUFFER_SIZE
     int "Maximum length of settings JSON contents"
-    default 1024
+    default 2048
     help
     Specifies the length of the buffers used to both stringify/send and receive settings JSON
 

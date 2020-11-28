@@ -50,22 +50,22 @@ setting_definition settings[] = {
         50, 51, 52, 53, 54, 55, 56, 57, 58, 59
     })),
     DEFINE_SETTING(alarm_enabled, 1, RANGE_ARRAY({0, 1})),
-    DEFINE_SETTING(alarm_led_pattern, lpat_fill_white, RANGE_ARRAY({})),
+    DEFINE_SETTING(alarm_led_pattern, lpat_fill_whyamionfirewhite, RANGE_ARRAY({})),
     DEFINE_SETTING(alarm_snooze_interval_min, 9, RANGE_ARRAY({1, 3, 5, 7, 9, 11, 13, 15})),
 
-    DEFINE_SETTING(sleep_delay_min, 30, RANGE_ARRAY({
+    DEFINE_SETTING(sleep_delay_min, 0, RANGE_ARRAY({
         0, 1, 5, 10, 15, 30, 45,
         60, 2*60, 3*60, 4*60, 5*60, 6*60, 7*60, 8*60, 9*60, 10*60})),
-    DEFINE_SETTING(sleep_fade_time_min, 15, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30, 45})),
+    DEFINE_SETTING(sleep_fade_time_min, 8, RANGE_ARRAY({1, 3, 5, 8, 10, 15, 30, 45})),
 #define TRANSMOG(name, value) value,
     DEFINE_SETTING(sleep_fade_start_temp, 2500, RANGE_ARRAY({ COLOR_CCT_TEMPERATURES })),
 #undef TRANSMOG
 #define TRANSMOG(name, value) value,
-    DEFINE_SETTING(sleep_fade_start_luminosity, 204, RANGE_ARRAY({ COLOR_CCT_LUMINOSITIES })),
+    DEFINE_SETTING(sleep_fade_start_luminosity, 102, RANGE_ARRAY({ COLOR_CCT_LUMINOSITIES })),
 #undef TRANSMOG
-    DEFINE_SETTING(sleep_fade_fill_time_ms, 1000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
+    DEFINE_SETTING(sleep_fade_fill_time_ms, 3000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
 
-    DEFINE_SETTING(fill_time_ms, 1000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
+    DEFINE_SETTING(fill_time_ms, 3000, RANGE_ARRAY({1*1000, 3*1000, 5*1000, 7*1000, 9*1000, 11*1000})),
 };
 int settings_len = LWIP_ARRAYSIZE(settings);
 
