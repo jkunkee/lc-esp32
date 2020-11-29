@@ -191,6 +191,59 @@ static const httpd_uri_t time_uri = {
     .user_ctx  = NULL,
 };
 
+#include "esp_partition.h"
+
+static esp_err_t coredump_handler(httpd_req_t *req)
+{
+    char msg[100];
+    const size_t msg_len = 100;
+    const esp_partition_t *partition;
+
+    partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_COREDUMP, NULL);
+
+    httpd_resp_set_hdr(req, "Content-Type", "application/octet-stream");
+
+    snprintf(msg, msg_len, "Hello World %p", partition);
+    uint32_t partition_len = partition->size;
+    char buf[256];
+    size_t buf_len = 256;
+    esp_err_t err;
+
+    if (partition_len % buf_len != 0)
+    {
+        ESP_LOGE(TAG, "Partition is not multiple of buffer size");
+        err = httpd_resp_send_chunk(req, buf, buf_len);
+        return err;
+    }
+
+    for (size_t offset = 0; offset < partition_len; offset += buf_len)
+    {
+        err = esp_partition_read(partition, offset, buf, buf_len);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Error while dumping core dump");
+            ESP_ERROR_CHECK_WITHOUT_ABORT( err );
+            return httpd_resp_send_500(req);
+        }
+        err = httpd_resp_send_chunk(req, buf, buf_len);
+        if (err != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Error while transmitting core dump");
+            ESP_ERROR_CHECK_WITHOUT_ABORT( err );
+            return httpd_resp_send_500(req);
+        }
+    }
+    err = httpd_resp_send(req, NULL, 0);
+    return err;
+}
+
+static const httpd_uri_t coredump_uri = {
+    .uri       = "/coredump",
+    .method    = HTTP_GET,
+    .handler   = coredump_handler,
+    .user_ctx  = NULL,
+};
+
 #include "esp_ota_ops.h"
 
 static esp_err_t firmware_update_handler(httpd_req_t *req)
@@ -440,6 +493,7 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &command_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &temp_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &coredump_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_update_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_confirm_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_rollback_uri) );
