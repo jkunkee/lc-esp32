@@ -188,7 +188,7 @@ void app_main(void)
     led_set_status_indicator(led_status_nvs, LED_STATUS_COLOR_BUSY);
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-      ESP_LOGI(TAG, "It appears flash erase/init is needed");
+      ESP_LOGI(TAG, "It appears flash erase/init is needed, probably due to OTA upgrade");
       ESP_ERROR_CHECK(nvs_flash_erase());
       ret = nvs_flash_init();
     }

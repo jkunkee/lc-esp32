@@ -173,12 +173,219 @@ static const httpd_uri_t time_uri = {
     .user_ctx  = NULL,
 };
 
+#include "esp_ota_ops.h"
+
+static esp_err_t firmware_update_handler(httpd_req_t *req)
+{
+    esp_ota_handle_t ota_handle = 0;
+    const esp_partition_t *partition = NULL;
+    esp_err_t operation_err_val;
+    esp_err_t http_response_err_val;
+    char msg[120];
+    int msg_len = 120;
+
+    // Figure out where to put the data
+    partition = esp_ota_get_next_update_partition(NULL);
+    if (partition == NULL)
+    {
+        http_response_err_val = httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No valid OTA update partition found");
+        return http_response_err_val;
+    }
+
+    // Allocate the structures to track writing into the flash partition. Erase as the data comes in.
+    operation_err_val = esp_ota_begin(partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+    switch (operation_err_val)
+    {
+        // docs snapshot 11/28/2020
+    case ESP_OK: // OTA operation commenced successfully.
+        break;
+    case ESP_ERR_INVALID_ARG: // partition or out_handle arguments were NULL, or partition doesn’t point to an OTA app partition.
+    case ESP_ERR_NO_MEM: // Cannot allocate memory for OTA operation.
+    case ESP_ERR_OTA_PARTITION_CONFLICT: // Partition holds the currently running firmware, cannot update in place.
+    case ESP_ERR_NOT_FOUND: // Partition argument not found in partition table.
+    case ESP_ERR_OTA_SELECT_INFO_INVALID: // The OTA data partition contains invalid data.
+    case ESP_ERR_INVALID_SIZE: // Partition doesn’t fit in configured flash size.
+    case ESP_ERR_FLASH_OP_TIMEOUT: // Flash write failed.
+    case ESP_ERR_FLASH_OP_FAIL: // Flash write failed.
+    case ESP_ERR_OTA_ROLLBACK_INVALID_STATE: // If the running app has not confirmed state. Before performing an update, the application must be valid.
+    default:
+        snprintf(msg, msg_len, "esp_ota_begin returned 0x%x", operation_err_val);
+        http_response_err_val = httpd_resp_send_err(req, 500, msg);
+        return http_response_err_val;
+    }
+
+    char buf[1024];
+    bool update_succeeded = false;
+    int count;
+    snprintf(msg, msg_len, "If you see this text, the OTA update code missed an error path.");
+
+    while (pdTRUE)
+    {
+        count = httpd_req_recv(req, buf, sizeof(buf));
+
+        if (count == 0) {
+            // Connection closed gracefully and all data has been processed. Assume that's everything.
+            update_succeeded = true;
+            break;
+        }
+        else if (count == HTTPD_SOCK_ERR_INVALID || count == HTTPD_SOCK_ERR_TIMEOUT  || count == HTTPD_SOCK_ERR_FAIL)
+        {
+            operation_err_val = ESP_FAIL;
+            snprintf(msg, msg_len, "HTTPD error while receiving data: %d", count);
+            update_succeeded = false;
+            break;
+        }
+
+        operation_err_val = esp_ota_write(ota_handle, buf, count);
+        if (operation_err_val != ESP_OK)
+        {
+            ESP_ERROR_CHECK_WITHOUT_ABORT( operation_err_val );
+            snprintf(msg, msg_len, "Failed to write %d bytes to flash, error 0x%x.", count, operation_err_val);
+            update_succeeded = false;
+            break;
+        }
+    }
+
+    // Finish and validate writing, free up resources
+    if (ota_handle != 0)
+    {
+        operation_err_val = esp_ota_end(ota_handle);
+
+        ESP_ERROR_CHECK_WITHOUT_ABORT( operation_err_val );
+
+        if (update_succeeded && operation_err_val != ESP_OK)
+        {
+            snprintf(msg, msg_len, "Failed to finalize flash writes, error 0x%x.", operation_err_val);
+            update_succeeded = false;
+        }
+    }
+
+    // Boot to the new image
+    if (update_succeeded && partition != NULL)
+    {
+        operation_err_val = esp_ota_set_boot_partition(partition);
+        if (operation_err_val != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Setting boot partition to 0x%p failed!", partition);
+            snprintf(msg, msg_len, "Failed to set boot partition to 0x%x, error 0x%x.", partition->address, operation_err_val);
+            // At some point I may expose more of this functionality, but for now this is *so close* but still an abject failure.
+            update_succeeded = false;
+        }
+    }
+
+    if (update_succeeded)
+    {
+        http_response_err_val = httpd_resp_sendstr(req, "Update succeeded, rebooting...");
+        // Delay long enough for HTTPD to close the socket
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        esp_restart();
+    }
+    else
+    {
+        // The source of the error populates msg.
+        http_response_err_val = httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, msg);
+    }
+
+    // Note that the last if statement ensures that this is an httpd_resp_* err value.
+    return http_response_err_val;
+}
+
+static const httpd_uri_t firmware_update_uri = {
+    .uri       = "/firmware/update",
+    .method    = HTTP_PUT,
+    .handler   = firmware_update_handler,
+    .user_ctx  = NULL,
+};
+
+static esp_err_t firmware_confirm_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, "text/plain");
+
+    // TODO: test if image in probative state first
+    esp_err_t err = esp_ota_mark_app_valid_cancel_rollback();
+
+    if (err != ESP_OK)
+    {
+        ESP_LOGW(TAG, "/firmware/confirm handler failed with err 0x%x", err);
+        return httpd_resp_send_err(req, 409, "Firmware acceptance failed; probably either already accepted or factory image");
+    }
+
+    const char *msg = "Firmware marked as known-good, will not revert on next reboot";
+    return httpd_resp_send(req, msg, strlen(msg));
+}
+
+static const httpd_uri_t firmware_confirm_uri = {
+    .uri       = "/firmware/confirm",
+    .method    = HTTP_POST,
+    .handler   = firmware_confirm_handler,
+    .user_ctx  = NULL,
+};
+
+static esp_err_t firmware_rollback_handler(httpd_req_t *req)
+{
+    char *success_msg = "If you can see this, you're too close. (rollback successful; reboot in progress)";
+    size_t success_msg_len = strlen(success_msg);
+    char buf[100];
+    httpd_resp_set_type(req, "text/plain");
+
+    // TODO test to see if rollback possible first (using utility function)
+    esp_err_t err = esp_ota_mark_app_invalid_rollback_and_reboot();
+
+    switch (err)
+    {
+    case ESP_ERR_OTA_ROLLBACK_INVALID_STATE:
+        return httpd_resp_send_err(req, 409, "Current app is factory app, not OTA app; nothing there to roll back to");
+    case ESP_ERR_OTA_ROLLBACK_FAILED:
+        return httpd_resp_send_err(req, 409, "Passive partition does not contain valid firmware; nothing there to roll back to");
+    case ESP_OK:
+        return httpd_resp_send(req, success_msg, success_msg_len);
+    case ESP_FAIL:
+    default:
+        snprintf(buf, sizeof(buf), "Something strange went wrong during rollback; esp_err_t %x returned.", err);
+        return httpd_resp_send_err(req, 409, buf);
+    }
+}
+
+static const httpd_uri_t firmware_rollback_uri = {
+    .uri       = "/firmware/rollback",
+    .method    = HTTP_POST,
+    .handler   = firmware_rollback_handler,
+    .user_ctx  = NULL,
+};
+
+static esp_err_t firmware_status_handler(httpd_req_t *req)
+{
+    ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_resp_set_type(req, "application/json") );
+
+    // based significantly off of native ota sample
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    esp_ota_img_states_t ota_state = -1;
+    esp_err_t status = esp_ota_get_state_partition(running, &ota_state);
+
+    char buf[100];
+    int written = snprintf(buf, 100, "{\"Firmware status\": {\"partition\": \"0x%x\", \"retval\": \"0x%x\", \"state\": \"0x%x\"}}", running->address, status, ota_state);
+    // TODO: add esp_ota_get_partition_description()
+    ESP_LOGD(TAG, "%s", buf);
+
+    return httpd_resp_send(req, buf, written);
+}
+
+static const httpd_uri_t firmware_status_uri = {
+    .uri       = "/firmware/status",
+    .method    = HTTP_GET,
+    .handler   = firmware_status_handler,
+    .user_ctx  = NULL,
+};
+
 // Web server handle
 httpd_handle_t server = NULL;
 
 esp_err_t lc_http_start(void)
 {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+
+    // Allow for more URIs
+    config.max_uri_handlers = 10;
 
     if (server != NULL)
     {
@@ -197,6 +404,10 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &main_page) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &command_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_update_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_confirm_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_rollback_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_status_uri) );
     }
     else
     {
