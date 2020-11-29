@@ -184,10 +184,25 @@ static esp_err_t firmware_update_handler(httpd_req_t *req)
     char msg[120];
     int msg_len = 120;
 
+    ESP_LOGI(TAG, "Attempting OTA update");
+
+    // Allocate HTTP receive buffer
+    char *buf = NULL;
+    const size_t buf_len = CONFIG_LC_HTTP_OTA_RX_BUFFER_SIZE;
+    buf = malloc(buf_len);
+    if (buf == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to allocate firmware receive buffer");
+        snprintf(msg, msg_len, "Failed to allocate %zu-byte receive buffer", buf_len);
+        http_response_err_val = httpd_resp_send_err(req, 500, msg);
+        return http_response_err_val;
+    }
+
     // Figure out where to put the data
     partition = esp_ota_get_next_update_partition(NULL);
     if (partition == NULL)
     {
+        free(buf);
         http_response_err_val = httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "No valid OTA update partition found");
         return http_response_err_val;
     }
@@ -209,19 +224,19 @@ static esp_err_t firmware_update_handler(httpd_req_t *req)
     case ESP_ERR_FLASH_OP_FAIL: // Flash write failed.
     case ESP_ERR_OTA_ROLLBACK_INVALID_STATE: // If the running app has not confirmed state. Before performing an update, the application must be valid.
     default:
+        free(buf);
         snprintf(msg, msg_len, "esp_ota_begin returned 0x%x", operation_err_val);
         http_response_err_val = httpd_resp_send_err(req, 500, msg);
         return http_response_err_val;
     }
 
-    char buf[1024];
     bool update_succeeded = false;
     int count;
     snprintf(msg, msg_len, "If you see this text, the OTA update code missed an error path.");
 
     while (pdTRUE)
     {
-        count = httpd_req_recv(req, buf, sizeof(buf));
+        count = httpd_req_recv(req, buf, buf_len);
 
         if (count == 0) {
             // Connection closed gracefully and all data has been processed. Assume that's everything.
@@ -245,6 +260,8 @@ static esp_err_t firmware_update_handler(httpd_req_t *req)
             break;
         }
     }
+
+    free(buf);
 
     // Finish and validate writing, free up resources
     if (ota_handle != 0)
