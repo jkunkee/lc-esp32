@@ -139,6 +139,24 @@ static const httpd_uri_t command_uri = {
     .user_ctx  = NULL,
 };
 
+uint8_t temprature_sens_read();
+
+static esp_err_t temp_handler(httpd_req_t *req)
+{
+    char msg[60];
+    const size_t msg_len = sizeof(msg);
+    uint8_t temp = temprature_sens_read();
+    snprintf(msg, msg_len, "{\"useless_on_die_temperature_junction\": %hhu}", temp);
+    return httpd_resp_sendstr(req, msg);
+}
+
+static const httpd_uri_t temp_uri = {
+    .uri       = "/temp",
+    .method    = HTTP_GET,
+    .handler   = temp_handler,
+    .user_ctx  = NULL,
+};
+
 static esp_err_t time_handler(httpd_req_t *req)
 {
     // read the current time
@@ -402,7 +420,7 @@ esp_err_t lc_http_start(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Allow for more URIs
-    config.max_uri_handlers = 10;
+    config.max_uri_handlers = 11;
 
     if (server != NULL)
     {
@@ -420,6 +438,7 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &settings_put) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &main_page) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &command_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &temp_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_update_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_confirm_uri) );
