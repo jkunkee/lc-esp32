@@ -157,6 +157,21 @@ static const httpd_uri_t temp_uri = {
     .user_ctx  = NULL,
 };
 
+static esp_err_t reboot_handler(httpd_req_t *req)
+{
+    esp_err_t err = httpd_resp_sendstr(req, "Rebooting!");
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    esp_restart();
+    return err;
+}
+
+static const httpd_uri_t reboot_uri = {
+    .uri       = "/reboot",
+    .method    = HTTP_POST,
+    .handler   = reboot_handler,
+    .user_ctx  = NULL,
+};
+
 static esp_err_t time_handler(httpd_req_t *req)
 {
     // read the current time
@@ -473,7 +488,7 @@ esp_err_t lc_http_start(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Allow for more URIs
-    config.max_uri_handlers = 11;
+    config.max_uri_handlers = 12;
 
     if (server != NULL)
     {
@@ -492,6 +507,7 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &main_page) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &command_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &temp_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &reboot_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &coredump_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_update_uri) );
