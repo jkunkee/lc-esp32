@@ -129,8 +129,17 @@ typedef color_rgb_t color_rgb_pwm_t;
 
 #define COLOR_CCT_TEMPERATURES \
     TRANSMOG(red_1000, 1000) \
+    TRANSMOG(test_1800, 1800) \
+    TRANSMOG(test_2000, 2000) \
+    TRANSMOG(test_2200, 2200) \
     TRANSMOG(warm_2500, 2500) \
+    TRANSMOG(test_2700, 2700) \
+    TRANSMOG(test_2900, 2900) \
+    TRANSMOG(test_3100, 3100) \
+    TRANSMOG(test_3300, 3300) \
+    TRANSMOG(test_3500, 3500) \
     TRANSMOG(cool_3800, 3800) \
+    TRANSMOG(test_4000, 4000) \
     TRANSMOG(day_5500, 5500) \
     TRANSMOG(blue_10000, 10000) \
 
