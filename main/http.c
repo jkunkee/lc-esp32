@@ -294,7 +294,7 @@ static esp_err_t firmware_update_handler(httpd_req_t *req)
     }
 
     // Allocate the structures to track writing into the flash partition. Erase as the data comes in.
-    operation_err_val = esp_ota_begin(partition, OTA_WITH_SEQUENTIAL_WRITES, &ota_handle);
+    operation_err_val = esp_ota_begin(partition, OTA_SIZE_UNKNOWN, &ota_handle);
     switch (operation_err_val)
     {
         // docs snapshot 11/28/2020
