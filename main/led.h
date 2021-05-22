@@ -41,6 +41,7 @@
     TRANSMOG(local_time_in_unix_epoch_seconds) \
     TRANSMOG(fade_start) \
     TRANSMOG(fade_step) \
+    TRANSMOG(rambo_brite) \
     TRANSMOG(max)
 
 #define TRANSMOG(n) lpat_##n,

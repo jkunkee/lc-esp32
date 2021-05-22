@@ -617,6 +617,123 @@ void demo_cct(void)
     strip->refresh(strip);
 }
 
+void clear_all(void)
+{
+    for (int stripIdx = 0; stripIdx < LED_STRIP_COUNT; stripIdx++)
+    {
+        led_strip_t *strip = strips[stripIdx];
+        strip->clear(strip);
+    }
+}
+
+void refresh_all(void)
+{
+    for (int stripIdx = 0; stripIdx < LED_STRIP_COUNT; stripIdx++)
+    {
+        led_strip_t *strip = strips[stripIdx];
+        strip->refresh(strip);
+    }
+}
+
+// strip - pointer to led_strip_t strip
+// brightness - the 'v' in hsv
+// led0 to led_n - the range of LED indices, inclusive, to draw the rainbow on
+// angle_start - 'h' in hsv angle to start the rainbo
+// angle_size - add to angle_start to calculate 'h' value to stop at, exclusive
+void write_rainbow(led_strip_t *strip, int brightness, int led0, int led_n, int angle_start, int angle_size)
+{
+    #define RAINBOW_COLORS_COUNT LEDS_PER_STRIP
+    static bool rainbow_initiated = false;
+    static color_rgb_t rainbow_colors[RAINBOW_COLORS_COUNT];
+    const int rainbow_brightness = 50;
+
+    if (false == rainbow_initiated)
+    {
+        rainbow_initiated = true;
+        for (int idx = 0; idx < RAINBOW_COLORS_COUNT; idx++)
+        {
+            rainbow_colors[idx] = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(idx * 360 / RAINBOW_COLORS_COUNT,
+                                                   color_hsv_sat_values[color_hsv_sat_100],
+                                                   rainbow_brightness
+                                                   ));
+        }
+    }
+
+    // argument validation
+    // if strip is null, there's nothing else to do (consider logging or throwing error)
+    if (strip == NULL)
+    {
+        return;
+    }
+    // cap brightness to 100 arbitrarily -- I think that's part of HSV ranges and can't be bothered to check right now
+    if (brightness >= 100) { brightness = 100; }
+    // validate the LED indices' ranges
+    if (led0 < 0 || LEDS_PER_STRIP <= led0 ||
+        led_n < 0 || LEDS_PER_STRIP <= led_n)
+    {
+        return;
+    }
+    if (led0 > led_n)
+    {
+        // handle wraparound by splitting into two calls
+        // split angle_size proportionately between them
+        int bottom_size = led_n + 1;
+        int top_size = LEDS_PER_STRIP - led0;
+        int top_angle_start = angle_start;
+        int top_angle_size = angle_size * top_size / (top_size + bottom_size);
+        int bottom_angle_start = top_angle_start + top_angle_size;
+        int bottom_angle_size = angle_size - top_angle_size;
+        write_rainbow(strip, brightness, 0, led_n, bottom_angle_start, bottom_angle_size);
+        write_rainbow(strip, brightness, led0, LEDS_PER_STRIP-1, top_angle_start, top_angle_size);
+        return;
+    }
+    int angle;
+    color_rgb_t color;
+    const int count = led_n - led0 + 1;
+    for (int led_idx = 0; led_idx < count; led_idx++)
+    {
+        angle = angle_start + angle_size * led_idx / count;
+        if (led0 == led_n)
+        {
+            // take the midpoint color
+            angle = angle_start + angle_size / 2;
+        }
+        // The color-scrolling algorithm slows down drastically after the first
+        // couple of steps. This function has a floating-point matrix multiplication
+        // and so could be quite slow once the pipeline fills; what I do know is that
+        // commenting out the call fixes the issue.
+        // One option is to switch the function to fixed-point math, but that takes
+        // a lot of analysis I don't feel like doing right now.
+        //color = color_hsv_to_rgb(COLOR_HSV_TO_STRUCT(angle,
+        //                         color_hsv_sat_values[color_hsv_sat_100],
+        //                         brightness
+        //                         ));
+        // Another option, since I know what kind of range I want, is to precompute
+        // them and just copy them around in various permutations.
+        color = rainbow_colors[(angle * RAINBOW_COLORS_COUNT / 360) % RAINBOW_COLORS_COUNT];
+        strip->set_pixel(strip, led0 + led_idx, COLOR_RGB_FROM_STRUCT(color));
+    }
+}
+
+void rambo_brite(void)
+{
+    //clear_all(); // avoid black flash on pattern repeat; just means below has to write to all LEDs
+    // The basic approach is one for loop with a color increment and a delay.
+    // This could be munged a bit to tease apart the color range, scroll rate,
+    // and duration.
+    const int color_angle_step = 360 / LEDS_PER_STRIP;
+    const int brightness = 50;
+    const int delay = 29; // ~35 Hz
+    const int steps = 5 * 360 / color_angle_step;
+    for (int step = 0; step < steps; step++)
+    {
+        write_rainbow(strips[0], brightness, 0, LEDS_PER_STRIP-1, color_angle_step * step, 270);
+        write_rainbow(strips[1], brightness, 0, LEDS_PER_STRIP-1, color_angle_step * step, 270);
+        refresh_all();
+        vTaskDelay(delay / portTICK_PERIOD_MS);
+    }
+}
+
 esp_err_t led_run_sync(led_pattern_t p)
 {
     esp_err_t retVal = ESP_OK;
@@ -723,6 +840,9 @@ esp_err_t led_run_sync(led_pattern_t p)
         break;
     case lpat_fade_step:
         fade_step();
+        break;
+    case lpat_rambo_brite:
+        rambo_brite();
         break;
     default:
         retVal = ESP_ERR_INVALID_ARG;
