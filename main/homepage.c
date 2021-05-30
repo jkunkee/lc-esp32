@@ -1,6 +1,6 @@
 // To update
-// 1. delete all lines after '='
-// 2. cd to this folder
+// 1. delete everything after '=' except one newline
+// 2. cd to this folder in WSL (Cygwin probably could work too)
 // 3. dos2unix < test.html | grep -v "TEST SCAFFOLDING" | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' | unix2dos >> homepage.c
 static const char* main_page_content =
 "<html><head>\n"
@@ -19,6 +19,7 @@ static const char* main_page_content =
 "<h2 id=\"current_time\">Current Local Time: ...</h2>\n"
 "<h2>Actions</h2>\n"
 "<p><button id=\"on\">On</button> <button id=\"off\">Off</button></p>\n"
+"<p><button id=\"night_light\">Night</button></p>\n"
 "<p>Alarm:</p>\n"
 "<p><button id=\"alarm_snooze\">Snooze</button> <button id=\"alarm_stop\">Stop</button></p>\n"
 "<p>Sleep Timer:</p>\n"
@@ -108,6 +109,11 @@ static const char* main_page_content =
 "    await fetch('/command?alarm_stop=1');\n"
 "    await fetch('/command?sleep_stop=1');\n"
 "    await fetch('/command?run_pattern='+ranges.alarm_led_pattern.indexOf('fade_start'));\n"
+"};\n"
+"document.getElementById('night_light').onclick = async function run_pattern() {\n"
+"    await fetch('/command?alarm_stop=1');\n"
+"    await fetch('/command?sleep_stop=1');\n"
+"    await fetch('/command?run_pattern='+ranges.alarm_led_pattern.indexOf('night_light'));\n"
 "};\n"
 "document.getElementById('off').onclick = async function run_pattern() {\n"
 "    await fetch('/command?alarm_stop=1');\n"

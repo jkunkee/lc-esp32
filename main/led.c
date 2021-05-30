@@ -808,6 +808,9 @@ esp_err_t led_run_sync(led_pattern_t p)
     case lpat_fill_whosebloodisthisred:
         fill_all_rgb(fill_interval_ms, color_rgb_color_values[color_rgb_color_whosebloodisthisred]);
         break;
+    case lpat_night_light:
+        fill_all_rgb(fill_interval_ms, (color_rgb_t){.r = 60, .g = 0, .b = 0});
+        break;
     // data patterns
     case lpat_current_time:
         show_current_time();

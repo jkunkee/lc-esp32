@@ -32,6 +32,7 @@
     TRANSMOG(fill_whyamionfirewhite) \
     TRANSMOG(fill_auiiieeyellow) \
     TRANSMOG(fill_whosebloodisthisred) \
+    TRANSMOG(night_light) \
     TRANSMOG(current_time) \
     TRANSMOG(color_showcase) \
     TRANSMOG(brightness_gradient) \

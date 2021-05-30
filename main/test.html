@@ -14,6 +14,7 @@
 <h2 id="current_time">Current Local Time: ...</h2>
 <h2>Actions</h2>
 <p><button id="on">On</button> <button id="off">Off</button></p>
+<p><button id="night_light">Night</button></p>
 <p>Alarm:</p>
 <p><button id="alarm_snooze">Snooze</button> <button id="alarm_stop">Stop</button></p>
 <p>Sleep Timer:</p>
@@ -113,6 +114,11 @@ document.getElementById('on').onclick = async function run_pattern() {
     await fetch('/command?alarm_stop=1');
     await fetch('/command?sleep_stop=1');
     await fetch('/command?run_pattern='+ranges.alarm_led_pattern.indexOf('fade_start'));
+};
+document.getElementById('night_light').onclick = async function run_pattern() {
+    await fetch('/command?alarm_stop=1');
+    await fetch('/command?sleep_stop=1');
+    await fetch('/command?run_pattern='+ranges.alarm_led_pattern.indexOf('night_light'));
 };
 document.getElementById('off').onclick = async function run_pattern() {
     await fetch('/command?alarm_stop=1');
