@@ -20,7 +20,7 @@
 // Tag used to prefix log entries from this file
 #define TAG "lc-esp32 http"
 
-#include "homepage.c"
+#include "homepage.h"
 
 static esp_err_t main_page_get_handler(httpd_req_t *req)
 {

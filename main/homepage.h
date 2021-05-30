@@ -1,7 +1,7 @@
 // To update
 // 1. delete everything after '=' except one newline
 // 2. cd to this folder in WSL (Cygwin probably could work too)
-// 3. dos2unix < test.html | grep -v "TEST SCAFFOLDING" | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' | unix2dos >> homepage.c
+// 3. dos2unix < test.html | grep -v "TEST SCAFFOLDING" | sed -e 's/"/\\"/g' -e 's/$/\\n"/g' -e 's/^/"/g' -e 's/CONFIG_LC_MDNS_INSTANCE/"CONFIG_LC_MDNS_INSTANCE"/g' -e '$s/$/\n;/' | unix2dos >> homepage.h
 static const char* main_page_content =
 "<html><head>\n"
 "<title>"CONFIG_LC_MDNS_INSTANCE" Control Panel</title>\n"
