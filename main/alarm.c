@@ -41,10 +41,13 @@ typedef enum _alarm_wait_task_state_t
 static EventGroupHandle_t alarm_event_group;
 static TaskHandle_t alarm_task;
 
+alarm_wait_task_state_t alarm_current_state = initializing;
+
 void alarm_task_func(void* param)
 {
     const int seconds_per_loop = 1;
-    alarm_wait_task_state_t alarm_current_state = initializing;
+    // move to global for diag route
+    //alarm_wait_task_state_t alarm_current_state = initializing;
     alarm_wait_task_state_t alarm_next_state = initializing;
     time_t prev_now = 0;
     time_t now = 0;

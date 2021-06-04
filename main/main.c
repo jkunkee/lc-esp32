@@ -160,12 +160,15 @@ typedef enum _lc_state {
     ERROR_STATE
 } lc_state;
 
+lc_state current_state = bootup;
+
 void app_main(void)
 {
     // This function is run as a FreeRTOS Task.
     // Govern what it does based on the current state plus inputs.
 
-    lc_state current_state = bootup;
+    // move to global scope for diag route
+    //lc_state current_state = bootup;
 
     ESP_LOGI(TAG, "Initializing the LED driver...");
     ESP_ERROR_CHECK(led_init());

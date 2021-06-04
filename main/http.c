@@ -259,6 +259,78 @@ static const httpd_uri_t coredump_uri = {
     .user_ctx  = NULL,
 };
 
+static volatile uint32_t bad_stack_callback_count = 0;
+void vApplicationStackOverflowHook( TaskHandle_t xTask,
+                                    signed char *pcTaskName )
+{
+    bad_stack_callback_count++;
+}
+// be goose, do evil thing
+extern led_color_t status_bits[];
+extern int current_state;
+extern int alarm_current_state;
+
+static esp_err_t diag_handler(httpd_req_t *req)
+{
+    // heap usage
+    // task stack high water marks
+    // uptime?
+    // ?
+    #define MESSAGE_BUF_LEN 32
+    char message[MESSAGE_BUF_LEN];
+    esp_err_t send_err;
+
+    httpd_resp_set_status(req, HTTPD_200);
+    httpd_resp_set_type(req, "text/plain");
+
+    // ignore return value since this is a hacky diagnostic readout, not a data format
+    snprintf(message, MESSAGE_BUF_LEN, "bscc:%d\n", bad_stack_callback_count);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+
+    size_t size = xPortGetFreeHeapSize();
+    snprintf(message, MESSAGE_BUF_LEN, "fhs:%d\n", size);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    size = xPortGetMinimumEverFreeHeapSize();
+    snprintf(message, MESSAGE_BUF_LEN, "fhsmat:%d\n", size);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    bool heap_err = heap_caps_check_integrity_all(true);
+    snprintf(message, MESSAGE_BUF_LEN, "heapok:%d\n", (int)heap_err);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    //vTaskGetRunTimeStats(NULL); not available
+    snprintf(message, MESSAGE_BUF_LEN, "ls:f%d l%d v%d n%d w%d m%d t%d a%d\n",
+             status_bits[led_status_full_system],
+             status_bits[led_status_led],
+             status_bits[led_status_nvs],
+             status_bits[led_status_netif],
+             status_bits[led_status_wifi],
+             status_bits[led_status_mdns],
+             status_bits[led_status_sntp],
+             status_bits[led_status_alarm]);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    snprintf(message, MESSAGE_BUF_LEN, "main:%d\n", current_state);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    snprintf(message, MESSAGE_BUF_LEN, "alarm:%d\n", alarm_current_state);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    int64_t uptime = esp_timer_get_time();
+    snprintf(message, MESSAGE_BUF_LEN, "up:%lldd%lldh%lldm%llds\n",
+             (uptime / 1000 / 1000 / 60 / 60 / 24),
+             (uptime / 1000 / 1000 / 60 / 60) % 24,
+             (uptime / 1000 / 1000 / 60) % 60,
+             (uptime / 1000 / 1000) % 60);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+
+    // terminate chunked encoding
+    send_err = httpd_resp_send_chunk(req, NULL, 0);
+    return send_err;
+}
+
+static const httpd_uri_t diag_uri = {
+    .uri       = "/diag",
+    .method    = HTTP_GET,
+    .handler   = diag_handler,
+    .user_ctx  = NULL,
+};
+
 #include "esp_ota_ops.h"
 
 static esp_err_t firmware_update_handler(httpd_req_t *req)
@@ -510,6 +582,7 @@ esp_err_t lc_http_start(void)
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &reboot_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &time_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &coredump_uri) );
+        ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &diag_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_update_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_confirm_uri) );
         ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_register_uri_handler(server, &firmware_rollback_uri) );
