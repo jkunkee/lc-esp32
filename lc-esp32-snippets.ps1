@@ -2,6 +2,9 @@
 # Get current state of OTA upgrade
 curl.exe -X GET http://lightclock.local/firmware/status
 
+# Manually start alarm clock
+curl.exe -X GET 'http://lightclock.local/command?alarm_manual_start=1'
+
 # Trigger rollback
 # The rollback API reboots immediately, so it never sends an HTTP response
 # unless there's an error. '-m 1' tells cURL to bail out after one second.

@@ -27,13 +27,15 @@ typedef enum _alarm_wait_task_state_t
 #define ALARM_STOP_BIT BIT0
 #define ALARM_SNOOZE_BIT BIT1
 #define ALARM_RECONFIG_BIT BIT2
-#define SLEEP_START_BIT BIT3
-#define SLEEP_STOP_BIT BIT4
+#define ALARM_MANUAL_START_BIT BIT3
+#define SLEEP_START_BIT BIT4
+#define SLEEP_STOP_BIT BIT5
 
 #define ALARM_ALL_BITS ( \
       ALARM_STOP_BIT \
     | ALARM_SNOOZE_BIT \
     | ALARM_RECONFIG_BIT \
+    | ALARM_MANUAL_START_BIT \
     | SLEEP_START_BIT \
     | SLEEP_STOP_BIT \
     )
@@ -141,7 +143,8 @@ void alarm_task_func(void* param)
                 // Checking all three makes this resilient to near-midnight alarm times
                 if ((prev_now <= yesterday_alarm_time && yesterday_alarm_time <= now) ||
                     (prev_now <= today_alarm_time && today_alarm_time <= now) ||
-                    (prev_now <= tomorrow_alarm_time && tomorrow_alarm_time <= now) )
+                    (prev_now <= tomorrow_alarm_time && tomorrow_alarm_time <= now) ||
+                    (bits & ALARM_MANUAL_START_BIT) )
                 {
                     ESP_LOGI(TAG, "Alarm triggered at Unix Epoch %ld", now);
                     alarm_next_state = running;
@@ -307,6 +310,11 @@ void alarm_snooze()
 void alarm_stop()
 {
     xEventGroupSetBits(alarm_event_group, ALARM_STOP_BIT);
+}
+
+void alarm_manual_start()
+{
+    xEventGroupSetBits(alarm_event_group, ALARM_MANUAL_START_BIT);
 }
 
 void sleep_start()

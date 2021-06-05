@@ -109,6 +109,10 @@ static esp_err_t command_handler(httpd_req_t *req)
                 ESP_LOGI(TAG, "Found URL query parameter => alarm_stop=%s", param);
                 alarm_stop();
             }
+            if (httpd_query_key_value(buf, "alarm_manual_start", param, param_len) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => alarm_manual_start=%s", param);
+                alarm_manual_start();
+            }
             if (httpd_query_key_value(buf, "sleep_start", param, param_len) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => sleep_start=%s", param);
                 sleep_start();

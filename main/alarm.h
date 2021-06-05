@@ -15,6 +15,7 @@
 void alarm_system_time_or_settings_changed();
 void alarm_snooze();
 void alarm_stop();
+void alarm_manual_start();
 
 void sleep_start();
 void sleep_stop();
