@@ -252,7 +252,7 @@ static esp_err_t coredump_handler(httpd_req_t *req)
             return httpd_resp_send_500(req);
         }
     }
-    err = httpd_resp_send(req, NULL, 0);
+    err = httpd_resp_send_chunk(req, NULL, 0);
     return err;
 }
 
