@@ -40,6 +40,10 @@ static esp_err_t settings_get_handler(httpd_req_t *req)
     char* buf;
     size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
     buf = malloc(buf_len);
+    if (buf == NULL)
+    {
+        return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "malloc failed");
+    }
     buf[buf_len-1] = '\0';
     ESP_ERROR_CHECK_WITHOUT_ABORT( settings_to_json(buf, buf_len-1) );
     ESP_ERROR_CHECK_WITHOUT_ABORT( httpd_resp_set_type(req, "application/json") );
@@ -58,18 +62,32 @@ static const httpd_uri_t settings_get = {
 static esp_err_t settings_post_handler(httpd_req_t *req)
 {
     char* buf;
-    size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
-    buf = malloc(buf_len);
+    const size_t buf_len = CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE;
+    // allow for adding null termination
+    buf = malloc(buf_len+1);
+    if (buf == NULL)
+    {
+        return httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "malloc failed in settings_post_handler");
+    }
     int bytes_read = httpd_req_recv(req, buf, buf_len);
 
-    if (bytes_read < 0 || CONFIG_LC_HTTP_SETTINGS_BUFFER_SIZE < bytes_read)
+    if (bytes_read < 0 || buf_len < bytes_read)
     {
         free(buf);
         httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "error receiving data");
         return ESP_OK;
     }
 
-    esp_err_t status = json_to_settings(buf, buf_len);
+    // httpd_req_recv doesn't (for good reason) null-terminate its input.
+    // The next call treats it as text, so terminate it.
+    if (bytes_read <= buf_len)
+    {
+        buf[bytes_read] = '\0';
+        bytes_read++;
+    }
+
+    // size_t cast is safe due to preceding if
+    esp_err_t status = json_to_settings(buf, (size_t)bytes_read);
     free(buf);
     if (status != ESP_OK)
     {
