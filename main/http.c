@@ -319,6 +319,8 @@ static esp_err_t diag_handler(httpd_req_t *req)
              (uptime / 1000 / 1000 / 60) % 60,
              (uptime / 1000 / 1000) % 60);
     send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    snprintf(message, MESSAGE_BUF_LEN, "json:%d\n", fail_reason);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
     bool heap_err = heap_caps_check_integrity_all(true);
     snprintf(message, MESSAGE_BUF_LEN, "heapok:%d\n", (int)heap_err);
     send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));

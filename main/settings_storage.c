@@ -190,16 +190,21 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
     return (succeeded != 0 ? ESP_OK : ESP_FAIL);
 }
 
+json_parse_fail_reason_t fail_reason = no_failure;
+
 // buf_len must include null termination
 esp_err_t json_to_settings(char* buf, size_t buf_len)
 {
+    fail_reason = no_failure;
     if (!is_string_null_terminated(buf, buf_len))
     {
+        fail_reason = initial_null_termination_missing;
         ESP_LOGE(TAG, "%s input buffer not null-terminated", __FUNCTION__);
         return ESP_FAIL;
     }
     if (settings == NULL)
     {
+        fail_reason = no_settings_object;
         ESP_LOGE(TAG, "%s requires a settings object", __FUNCTION__);
         return ESP_FAIL;
     }
@@ -209,6 +214,7 @@ esp_err_t json_to_settings(char* buf, size_t buf_len)
 
     if (json == NULL)
     {
+        fail_reason = cJSON_Parse_failed;
         ESP_LOGE(TAG, "%s: JSON parsing failed", __FUNCTION__);
         return ESP_FAIL;
     }
@@ -219,6 +225,7 @@ esp_err_t json_to_settings(char* buf, size_t buf_len)
 
     if (!cJSON_IsObject(json))
     {
+        fail_reason = is_not_object;
         ESP_LOGE(TAG, "%s: JSON root item is not Object", __FUNCTION__);
         retVal = ESP_FAIL;
     }

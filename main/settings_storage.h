@@ -33,3 +33,14 @@ esp_err_t get_setting(char* name, uint32_t* value);
 
 esp_err_t settings_to_json(char*, size_t);
 esp_err_t json_to_settings(char*, size_t);
+
+typedef enum _json_parse_fail_reason_t
+{
+    initial_null_termination_missing,
+    no_settings_object,
+    cJSON_Parse_failed,
+    is_not_object,
+    no_failure,
+} json_parse_fail_reason_t;
+
+extern json_parse_fail_reason_t fail_reason;
