@@ -297,9 +297,6 @@ static esp_err_t diag_handler(httpd_req_t *req)
     size = xPortGetMinimumEverFreeHeapSize();
     snprintf(message, MESSAGE_BUF_LEN, "fhsmat:%d\n", size);
     send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
-    bool heap_err = heap_caps_check_integrity_all(true);
-    snprintf(message, MESSAGE_BUF_LEN, "heapok:%d\n", (int)heap_err);
-    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
     //vTaskGetRunTimeStats(NULL); not available
     snprintf(message, MESSAGE_BUF_LEN, "ls:f%d l%d v%d n%d w%d m%d t%d a%d\n",
              status_bits[led_status_full_system],
@@ -321,6 +318,9 @@ static esp_err_t diag_handler(httpd_req_t *req)
              (uptime / 1000 / 1000 / 60 / 60) % 24,
              (uptime / 1000 / 1000 / 60) % 60,
              (uptime / 1000 / 1000) % 60);
+    send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
+    bool heap_err = heap_caps_check_integrity_all(true);
+    snprintf(message, MESSAGE_BUF_LEN, "heapok:%d\n", (int)heap_err);
     send_err = httpd_resp_send_chunk(req, message, strnlen(message, MESSAGE_BUF_LEN));
 
     // terminate chunked encoding
