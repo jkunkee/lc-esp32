@@ -58,6 +58,9 @@ void alarm_task_func(void* param)
     uint32_t alarm_hour = 0;
     uint32_t alarm_minute = 0;
     uint32_t alarm_snooze_interval_min = 0;
+    uint32_t alarm_on_cycle_count = 0;
+    // TODO make this sa config option, and maybe in wall-clock units
+    const uint32_t alarm_on_cycle_count_max = 50;
     time_t snooze_start_time = 0;
     uint32_t alarm_led_pattern_raw = 0;
     led_pattern_t alarm_pattern = lpat_fill_white;
@@ -166,7 +169,7 @@ void alarm_task_func(void* param)
             }
             break;
         case running:
-            if (bits & ALARM_STOP_BIT)
+            if (bits & ALARM_STOP_BIT || alarm_on_cycle_count > alarm_on_cycle_count_max)
             {
                 alarm_next_state = waiting;
             }
@@ -246,12 +249,19 @@ void alarm_task_func(void* param)
         case waiting:
             // When control comes back, we'll compare then and now to see if the alarm should fire.
             prev_now = now;
+            // Reset the counter used to track how many times the alarm pattern has run
+            // TODO: consider making this a wall-clock delta instead
+            if (alarm_next_state == running)
+            {
+                alarm_on_cycle_count = 0;
+            }
             break;
         case snoozing:
             prev_now = now;
             break;
         case running:
             prev_now = now;
+            alarm_on_cycle_count++;
             if (bits & ALARM_SNOOZE_BIT)
             {
                 snooze_start_time = now;
