@@ -343,6 +343,7 @@ void app_main(void)
             break;
         case run:
             led_set_status_indicator(led_status_full_system, LED_STATUS_COLOR_SUCCESS);
+            led_run_sync(lpat_fill_black);
             xEventGroupWaitBits(s_wifi_event_group, WIFI_FAIL_BIT, pdTRUE, pdFALSE, portMAX_DELAY);
             ESP_LOGI(TAG, "Got WIFI_FAIL_BIT");
             next_state = ERROR_STATE;

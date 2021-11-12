@@ -270,8 +270,9 @@ void alarm_task_func(void* param)
             // Don't run one last pair before turning off, just turn off.
             else if (alarm_current_state == alarm_next_state)
             {
-                // TODO: I find on/off to be too irritationg, so eventually make it a setting.
-                //led_run_sync(lpat_fill_black);
+                // TODO: I find on/off to be too irritating, so eventually make it a setting.
+                // For now, alternate to irritate me.
+                led_run_sync(lpat_fill_black);
                 led_run_sync(alarm_pattern);
             }
             break;
