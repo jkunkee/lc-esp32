@@ -187,6 +187,8 @@ esp_err_t settings_to_json(char* buf, size_t buf_len)
         ESP_LOGE(TAG, "Writing JSON string to buffer failed");
     }
 
+    cJSON_Delete(root);
+
     return (succeeded != 0 ? ESP_OK : ESP_FAIL);
 }
 
