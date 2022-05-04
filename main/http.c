@@ -283,7 +283,7 @@ static const httpd_uri_t coredump_uri = {
 
 static volatile uint32_t bad_stack_callback_count = 0;
 void vApplicationStackOverflowHook( TaskHandle_t xTask,
-                                    signed char *pcTaskName )
+                                    char *pcTaskName )
 {
     bad_stack_callback_count++;
 }
