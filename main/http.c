@@ -584,7 +584,7 @@ esp_err_t lc_http_start(void)
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     // Allow for more URIs
-    config.max_uri_handlers = 12;
+    config.max_uri_handlers = 13;
 
     if (server != NULL)
     {
